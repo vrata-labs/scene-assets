@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "presentation-room-review-v1",
+  "label": "Presentation Room Art Candidate",
+  "source": "Vrata original procedural Blender art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 7.4
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "presentation-room-review-v1-r1-left-outer",
+        "position": { "x": -4.5, "y": 0.48, "z": 3.75 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 1 left outer"
+      },
+      {
+        "id": "presentation-room-review-v1-r1-left-inner",
+        "position": { "x": -2.15, "y": 0.48, "z": 3.75 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 1 left inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r1-right-inner",
+        "position": { "x": 2.15, "y": 0.48, "z": 3.75 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 1 right inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r1-right-outer",
+        "position": { "x": 4.5, "y": 0.48, "z": 3.75 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 1 right outer"
+      },
+      {
+        "id": "presentation-room-review-v1-r2-left-outer",
+        "position": { "x": -4.5, "y": 0.48, "z": 1.05 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 2 left outer"
+      },
+      {
+        "id": "presentation-room-review-v1-r2-left-inner",
+        "position": { "x": -2.15, "y": 0.48, "z": 1.05 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 2 left inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r2-right-inner",
+        "position": { "x": 2.15, "y": 0.48, "z": 1.05 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 2 right inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r2-right-outer",
+        "position": { "x": 4.5, "y": 0.48, "z": 1.05 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 2 right outer"
+      },
+      {
+        "id": "presentation-room-review-v1-r3-left-outer",
+        "position": { "x": -4.5, "y": 0.48, "z": -1.65 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 3 left outer"
+      },
+      {
+        "id": "presentation-room-review-v1-r3-left-inner",
+        "position": { "x": -2.15, "y": 0.48, "z": -1.65 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 3 left inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r3-right-inner",
+        "position": { "x": 2.15, "y": 0.48, "z": -1.65 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 3 right inner"
+      },
+      {
+        "id": "presentation-room-review-v1-r3-right-outer",
+        "position": { "x": 4.5, "y": 0.48, "z": -1.65 },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.52,
+        "label": "Row 3 right outer"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Presentation screen",
+      "kind": "wall",
+      "widthM": 8.8,
+      "heightM": 4.35,
+      "widthPx": 1920,
+      "heightPx": 950,
+      "transform": {
+        "x": 0.7,
+        "y": 3.65,
+        "z": -8.6,
+        "yaw": 0
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 16,
+    "height": 6,
+    "depth": 18
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "presentation-room-review-v1-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "art-direction"
+  },
+  "notes": "Art-direction candidate: focal stage, presentation screen, central aisle, podium, original embedded PBR material kit, runtime-calibrated layered lighting, and twelve audience seats."
+}

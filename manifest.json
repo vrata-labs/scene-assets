@@ -100,6 +100,38 @@
       }
     },
     {
+      "sceneId": "meeting-room-review-v1",
+      "version": "0.2.1",
+      "releasePath": "assets/scenes/meeting-room-review-v1/0.2.1",
+      "files": {
+        "scene.json": {
+          "sha256": "33b9196b0de5b7dbabd9601a7208d0b743664ee580d74a39f190610738ddf4a4",
+          "sizeBytes": 2942
+        },
+        "scene.glb": {
+          "sha256": "5a4152f79fe3a1eb9faa533731ededdecedcea29148346ae3ef28f1cae8bae76",
+          "sizeBytes": 3298884
+        },
+        "preview.webp": {
+          "sha256": "64461c72d478c3b70f93add14e2b0f8c338187e9caead5a2f4be90403317b4f6",
+          "sizeBytes": 90142
+        },
+        "LICENSES.md": {
+          "sha256": "39163d1b4d8142714013cbcf7a07855e918056797fe88b5086146839341e34c0",
+          "sizeBytes": 292
+        }
+      },
+      "stats": {
+        "triangles": 43968,
+        "nodes": 148,
+        "meshes": 140,
+        "primitives": 140,
+        "materials": 17,
+        "textures": 20,
+        "animations": 0
+      }
+    },
+    {
       "sceneId": "personal-workspace-review-v1",
       "version": "0.1.0",
       "releasePath": "assets/scenes/personal-workspace-review-v1/0.1.0",
@@ -196,6 +228,38 @@
       }
     },
     {
+      "sceneId": "personal-workspace-review-v1",
+      "version": "0.2.1",
+      "releasePath": "assets/scenes/personal-workspace-review-v1/0.2.1",
+      "files": {
+        "scene.json": {
+          "sha256": "0846c13f9adad5e2b56368435edde9510ceede55209efb809bdc52fe6afa26e3",
+          "sizeBytes": 2103
+        },
+        "scene.glb": {
+          "sha256": "25e76c97af2b39f9be8cfd7ee5a3dd75ab2cb3205700cd7748078b9f1f97386b",
+          "sizeBytes": 3280144
+        },
+        "preview.webp": {
+          "sha256": "e0e398e8163f03196473edb0952c341ebb80c2623f1e92d88ac84dd82df3baf4",
+          "sizeBytes": 57218
+        },
+        "LICENSES.md": {
+          "sha256": "5a23fe44f4a9e6d31e59f0ca2383a60db901060e23c373a75f3415222333e308",
+          "sizeBytes": 298
+        }
+      },
+      "stats": {
+        "triangles": 33152,
+        "nodes": 128,
+        "meshes": 122,
+        "primitives": 122,
+        "materials": 17,
+        "textures": 22,
+        "animations": 0
+      }
+    },
+    {
       "sceneId": "presentation-room-review-v1",
       "version": "0.1.0",
       "releasePath": "assets/scenes/presentation-room-review-v1/0.1.0",
@@ -275,6 +339,38 @@
         "preview.webp": {
           "sha256": "1728e6109007bd7d78d15aa51b6473935dbbcdc017acd81c71bc8c23ed9dd24d",
           "sizeBytes": 57240
+        },
+        "LICENSES.md": {
+          "sha256": "abf103c3753d6e0363da1143aa81a35d65112cec9de255b5d98d99407b8c006a",
+          "sizeBytes": 297
+        }
+      },
+      "stats": {
+        "triangles": 60908,
+        "nodes": 260,
+        "meshes": 250,
+        "primitives": 250,
+        "materials": 13,
+        "textures": 18,
+        "animations": 0
+      }
+    },
+    {
+      "sceneId": "presentation-room-review-v1",
+      "version": "0.2.1",
+      "releasePath": "assets/scenes/presentation-room-review-v1/0.2.1",
+      "files": {
+        "scene.json": {
+          "sha256": "6ff47c4d05dadbc1f5b937139ee4f77327856ac64d53f6f579ecbb7d88c15345",
+          "sizeBytes": 4443
+        },
+        "scene.glb": {
+          "sha256": "33add45e76010b401e1b266fe79136794e6fd8864a7e9a272d546034b6b07cdf",
+          "sizeBytes": 4538568
+        },
+        "preview.webp": {
+          "sha256": "29c7615e05894ceaad01dee7cafde5ecb0e25855f4f710ab83df1903a9ecefed",
+          "sizeBytes": 57418
         },
         "LICENSES.md": {
           "sha256": "abf103c3753d6e0363da1143aa81a35d65112cec9de255b5d98d99407b8c006a",

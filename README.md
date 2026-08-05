@@ -5,9 +5,12 @@ Original, versioned scene bundles for Vrata web and XR rooms.
 The first release track contains three visual-review blockouts. These are not
 active product templates yet:
 
-- `personal-workspace-review-v1/0.1.0`
-- `meeting-room-review-v1/0.1.0`
-- `presentation-room-review-v1/0.1.0`
+- `personal-workspace-review-v1/0.1.1`
+- `meeting-room-review-v1/0.1.1`
+- `presentation-room-review-v1/0.1.1`
+
+The original `0.1.0` paths remain immutable. `0.1.1` closes the room ceilings
+after the first runtime review exposed black background above the walls.
 
 ## Layout
 
@@ -36,7 +39,7 @@ must use a new version directory.
 
 ```bash
 pnpm install
-BLENDER_BIN=/path/to/blender pnpm build:scenes
+REVIEW_VERSION=0.1.2 BLENDER_BIN=/path/to/blender pnpm build:scenes
 pnpm validate
 pnpm inspect
 ```

@@ -87,7 +87,11 @@ const generatedManifest = await buildManifest();
 const checkedManifest = await readFile(join(repoRoot, "manifest.json"), "utf8");
 assert(checkedManifest === serializeManifest(generatedManifest), "release_manifest_out_of_date");
 const releaseDirs = await releaseDirectories();
-assert(releaseDirs.length === 3, `expected_three_review_releases:${releaseDirs.length}`);
+const releaseKeys = new Set(generatedManifest.releases.map((release) => `${release.sceneId}@${release.version}`));
+assert(releaseKeys.size === generatedManifest.releases.length, "duplicate_scene_release");
+for (const sceneId of ["personal-workspace-review-v1", "meeting-room-review-v1", "presentation-room-review-v1"]) {
+  assert(releaseKeys.has(`${sceneId}@0.1.1`), `missing_current_review_release:${sceneId}`);
+}
 for (let index = 0; index < releaseDirs.length; index += 1) {
   await validateRelease(releaseDirs[index], generatedManifest.releases[index]);
 }

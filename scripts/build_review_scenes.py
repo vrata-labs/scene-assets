@@ -1,5 +1,8 @@
 import argparse
 import math
+import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -9,12 +12,14 @@ from mathutils import Vector
 
 BLENDER_VERSION = (4, 5, 12)
 SKIP_RENDER = False
+REVIEW_VERSION = ""
 
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", required=True)
+    parser.add_argument("--version", required=True)
     parser.add_argument("--skip-render", action="store_true")
     return parser.parse_args(argv)
 
@@ -142,6 +147,7 @@ def add_room_shell(prefix, width, depth, height, floor_material, wall_material, 
     add_box(f"{prefix}_BackWall", (0.0, depth / 2 - 0.1, height / 2), (width, 0.2, height), wall_material, bevel=0.02)
     add_box(f"{prefix}_LeftWall", (-width / 2 + 0.1, 0.0, height / 2), (0.2, depth, height), wall_material, bevel=0.02)
     add_box(f"{prefix}_RightWall", (width / 2 - 0.1, 0.0, height / 2), (0.2, depth, height), wall_material, bevel=0.02)
+    add_box(f"{prefix}_Ceiling", (0.0, 0.0, height - 0.06), (width, depth, 0.12), wall_material, bevel=0.02)
     add_box(f"{prefix}_BackBaseboard", (0.0, depth / 2 - 0.22, 0.15), (width - 0.3, 0.12, 0.3), trim_material, bevel=0.03)
     add_box(f"{prefix}_LeftBaseboard", (-width / 2 + 0.22, 0.0, 0.15), (0.12, depth - 0.3, 0.3), trim_material, bevel=0.03)
     add_box(f"{prefix}_RightBaseboard", (width / 2 - 0.22, 0.0, 0.15), (0.12, depth - 0.3, 0.3), trim_material, bevel=0.03)
@@ -247,10 +253,25 @@ def configure_world(background_color, strength):
 
 
 def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=30.0):
-    release_dir = repo_root / "assets" / "scenes" / scene_id / "0.1.0"
+    release_dir = repo_root / "assets" / "scenes" / scene_id / REVIEW_VERSION
     source_dir = repo_root / "sources" / scene_id
+    release_glb_path = release_dir / "scene.glb"
+    tracked_release = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", str(release_glb_path.relative_to(repo_root))],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if tracked_release.returncode == 0:
+        raise RuntimeError(f"published_scene_version_is_immutable:{scene_id}@{REVIEW_VERSION}")
     release_dir.mkdir(parents=True, exist_ok=True)
     source_dir.mkdir(parents=True, exist_ok=True)
+    base_release_dir = repo_root / "assets" / "scenes" / scene_id / "0.1.0"
+    if release_dir != base_release_dir:
+        for static_name in ("scene.json", "LICENSES.md"):
+            target_path = release_dir / static_name
+            if not target_path.exists():
+                shutil.copyfile(base_release_dir / static_name, target_path)
 
     camera_data = bpy.data.cameras.new("Review Camera")
     camera = bpy.data.objects.new("Review Camera", camera_data)
@@ -279,7 +300,7 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
     if not SKIP_RENDER:
         bpy.ops.render.render(write_still=True)
     bpy.ops.export_scene.gltf(
-        filepath=str(release_dir / "scene.glb"),
+        filepath=str(release_glb_path),
         export_format="GLB",
         export_cameras=False,
         export_lights=True,
@@ -357,7 +378,7 @@ def build_personal(repo_root):
             wood if index % 2 else midnight,
             bevel=0.025,
         )
-    add_box("Personal_CeilingLight", (0.4, 0.1, 4.0), (4.8, 0.16, 0.08), amber, bevel=0.03)
+    add_box("Personal_CeilingLight", (0.4, 0.5, 3.98), (3.4, 0.13, 0.06), amber, bevel=0.02)
 
     configure_world("#243C52", 0.35)
     add_area_light("Personal_Key", (0.0, -1.0, 3.7), (0.5, 2.3, 1.0), 1050, "#FFE0B5", 4.0)
@@ -507,11 +528,14 @@ def build_presentation(repo_root):
 
 
 def main():
-    global SKIP_RENDER
+    global REVIEW_VERSION, SKIP_RENDER
     if bpy.app.version[:3] != BLENDER_VERSION:
         raise RuntimeError(f"expected_blender_{BLENDER_VERSION}_got_{bpy.app.version[:3]}")
     args = parse_args()
     SKIP_RENDER = args.skip_render
+    REVIEW_VERSION = args.version
+    if not re.fullmatch(r"0\.1\.\d+", REVIEW_VERSION):
+        raise RuntimeError(f"invalid_review_version:{REVIEW_VERSION}")
     repo_root = Path(args.repo_root).resolve()
     build_personal(repo_root)
     build_meeting(repo_root)

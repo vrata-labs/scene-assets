@@ -33,7 +33,7 @@ function validateManifestShape(scene, releaseDir) {
   assert(scene.schemaVersion === 1, "invalid_scene_schema_version");
   assert(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(scene.sceneId), "invalid_scene_id");
   assert(basename(dirname(releaseDir)) === scene.sceneId, "scene_id_path_mismatch");
-  assert(/^0\.1\.\d+$/.test(basename(releaseDir)), "invalid_review_version");
+  assert(/^\d+\.\d+\.\d+$/.test(basename(releaseDir)), "invalid_release_version");
   assert(scene.glbPath === "scene.glb", "invalid_glb_path");
   assert(scene.preview === "preview.webp", "invalid_preview_path");
   assert(Array.isArray(scene.spawnPoints) && scene.spawnPoints[0]?.id === "main", "invalid_main_spawn");
@@ -77,6 +77,16 @@ async function validateRelease(releaseDir, releaseRecord) {
     maxIssues: 200
   });
   assert(report.issues.numErrors === 0, `gltf_validation_failed:${scene.sceneId}:${report.issues.numErrors}`);
+  if (report.issues.numWarnings > 0) {
+    const warningCounts = new Map();
+    for (const issue of report.issues.messages.filter((message) => message.severity === 1)) {
+      warningCounts.set(issue.code, (warningCounts.get(issue.code) ?? 0) + 1);
+    }
+    process.stdout.write(`${scene.sceneId}@${basename(releaseDir)} warning codes: ${Array.from(warningCounts.entries()).map(([code, count]) => `${code}=${count}`).join(", ")}\n`);
+    for (const issue of report.issues.messages.filter((message) => message.severity === 1).slice(0, 10)) {
+      process.stdout.write(`  ${issue.code}: ${issue.pointer ?? issue.message}\n`);
+    }
+  }
   process.stdout.write(
     `${scene.sceneId}@${basename(releaseDir)}: ${releaseRecord.stats.triangles} triangles, ` +
     `${releaseRecord.stats.nodes} nodes, ${bundleBytes} bytes, ${report.issues.numWarnings} glTF warnings\n`
@@ -90,7 +100,7 @@ const releaseDirs = await releaseDirectories();
 const releaseKeys = new Set(generatedManifest.releases.map((release) => `${release.sceneId}@${release.version}`));
 assert(releaseKeys.size === generatedManifest.releases.length, "duplicate_scene_release");
 for (const sceneId of ["personal-workspace-review-v1", "meeting-room-review-v1", "presentation-room-review-v1"]) {
-  assert(releaseKeys.has(`${sceneId}@0.1.1`), `missing_current_review_release:${sceneId}`);
+  assert(releaseKeys.has(`${sceneId}@0.2.0`), `missing_current_art_candidate:${sceneId}`);
 }
 for (let index = 0; index < releaseDirs.length; index += 1) {
   await validateRelease(releaseDirs[index], generatedManifest.releases[index]);

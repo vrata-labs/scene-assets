@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build:scenes": "bash scripts/build-scenes.sh",
+    "verify:source-exports": "bash scripts/verify-source-exports.sh",
     "manifest": "node scripts/build-manifest.mjs",
     "manifest:check": "node scripts/build-manifest.mjs --check",
     "validate": "node scripts/validate-assets.mjs",

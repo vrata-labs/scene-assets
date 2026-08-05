@@ -12,7 +12,8 @@ from mathutils import Vector
 
 BLENDER_VERSION = (4, 5, 12)
 SKIP_RENDER = False
-REVIEW_VERSION = ""
+RELEASE_VERSION = ""
+TEXTURE_SIZE = 256
 
 
 def parse_args():
@@ -32,12 +33,110 @@ def color(hex_value):
 def reset_scene():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
-    for collection in (bpy.data.meshes, bpy.data.curves, bpy.data.materials, bpy.data.cameras, bpy.data.lights):
+    for collection in (
+        bpy.data.meshes,
+        bpy.data.curves,
+        bpy.data.materials,
+        bpy.data.cameras,
+        bpy.data.lights,
+        bpy.data.images,
+        bpy.data.worlds,
+    ):
         for block in list(collection):
             collection.remove(block)
 
 
-def make_material(name, base_color, roughness=0.65, metallic=0.0, emission=None, emission_strength=0.0):
+def clamp(value, minimum=0.0, maximum=1.0):
+    return max(minimum, min(maximum, value))
+
+
+def pattern_height(pattern, u, v):
+    if pattern == "wood":
+        grain = math.sin((v * 10.0 + math.sin(u * 5.0) * 0.7) * math.tau)
+        fine = math.sin((v * 34.0 + u * 2.0) * math.tau) * 0.28
+        return 0.5 + grain * 0.34 + fine * 0.16
+    if pattern == "textile":
+        warp = math.sin(u * 22.0 * math.tau)
+        weft = math.sin(v * 22.0 * math.tau)
+        return 0.5 + warp * 0.11 + weft * 0.11 + warp * weft * 0.045
+    if pattern == "carpet":
+        noise = math.sin((u * 71.0 + v * 43.0) * math.tau) * math.sin((u * 37.0 - v * 59.0) * math.tau)
+        return 0.5 + noise * 0.24
+    if pattern == "stone":
+        vein = math.sin((u * 4.5 + v * 2.1 + math.sin(v * 8.0) * 0.12) * math.tau)
+        grain = math.sin((u * 29.0 - v * 17.0) * math.tau) * 0.12
+        return 0.5 + vein * 0.25 + grain
+    if pattern == "plaster":
+        broad = math.sin((u * 9.0 + v * 13.0) * math.tau)
+        fine = math.sin((u * 31.0 - v * 23.0) * math.tau)
+        return 0.5 + broad * 0.11 + fine * 0.06
+    return 0.5
+
+
+def make_pattern_images(name, base_color, pattern):
+    base_rgba = color(base_color)
+    color_image = bpy.data.images.new(f"{name} Base Color", width=TEXTURE_SIZE, height=TEXTURE_SIZE, alpha=False)
+    color_image.colorspace_settings.name = "sRGB"
+    normal_image = bpy.data.images.new(f"{name} Normal", width=TEXTURE_SIZE, height=TEXTURE_SIZE, alpha=False)
+    normal_image.colorspace_settings.name = "Non-Color"
+    color_pixels = []
+    normal_pixels = []
+    epsilon = 1.0 / TEXTURE_SIZE
+    normal_strength = {
+        "wood": 2.0,
+        "textile": 0.42,
+        "carpet": 0.7,
+        "stone": 0.75,
+        "plaster": 0.3,
+    }.get(pattern, 1.0)
+    shade_settings = {
+        "wood": (0.83, 0.3),
+        "textile": (0.96, 0.08),
+        "carpet": (0.94, 0.12),
+        "stone": (0.9, 0.2),
+        "plaster": (0.97, 0.06),
+    }
+
+    for y in range(TEXTURE_SIZE):
+        v = (y + 0.5) / TEXTURE_SIZE
+        for x in range(TEXTURE_SIZE):
+            u = (x + 0.5) / TEXTURE_SIZE
+            height = pattern_height(pattern, u, v)
+            shade_base, shade_range = shade_settings.get(pattern, (0.9, 0.2))
+            shade = shade_base + height * shade_range
+            color_pixels.extend((
+                clamp(base_rgba[0] * shade),
+                clamp(base_rgba[1] * shade),
+                clamp(base_rgba[2] * shade),
+                1.0,
+            ))
+            dx = pattern_height(pattern, u + epsilon, v) - pattern_height(pattern, u - epsilon, v)
+            dy = pattern_height(pattern, u, v + epsilon) - pattern_height(pattern, u, v - epsilon)
+            nx = -dx * normal_strength
+            ny = -dy * normal_strength
+            nz = 1.0
+            length = math.sqrt(nx * nx + ny * ny + nz * nz)
+            normal_pixels.extend((nx / length * 0.5 + 0.5, ny / length * 0.5 + 0.5, nz / length * 0.5 + 0.5, 1.0))
+
+    color_image.pixels.foreach_set(color_pixels)
+    normal_image.pixels.foreach_set(normal_pixels)
+    color_image.pack()
+    normal_image.pack()
+    return color_image, normal_image
+
+
+def make_material(
+    name,
+    base_color,
+    roughness=0.65,
+    metallic=0.0,
+    emission=None,
+    emission_strength=0.0,
+    pattern=None,
+    coat_weight=0.0,
+    coat_roughness=0.2,
+    sheen_weight=0.0,
+):
     material = bpy.data.materials.new(name)
     material.use_nodes = True
     material.diffuse_color = color(base_color)
@@ -52,6 +151,28 @@ def make_material(name, base_color, roughness=0.65, metallic=0.0, emission=None,
         strength_input = principled.inputs.get("Emission Strength")
         if strength_input:
             strength_input.default_value = emission_strength
+    coat_input = principled.inputs.get("Coat Weight")
+    if coat_input:
+        coat_input.default_value = coat_weight
+    coat_roughness_input = principled.inputs.get("Coat Roughness")
+    if coat_roughness_input:
+        coat_roughness_input.default_value = coat_roughness
+    sheen_input = principled.inputs.get("Sheen Weight")
+    if sheen_input:
+        sheen_input.default_value = sheen_weight
+    if pattern:
+        color_image, normal_image = make_pattern_images(name, base_color, pattern)
+        color_node = material.node_tree.nodes.new("ShaderNodeTexImage")
+        color_node.name = f"{name} Base Color"
+        color_node.image = color_image
+        material.node_tree.links.new(color_node.outputs["Color"], principled.inputs["Base Color"])
+        normal_texture_node = material.node_tree.nodes.new("ShaderNodeTexImage")
+        normal_texture_node.name = f"{name} Normal"
+        normal_texture_node.image = normal_image
+        normal_map_node = material.node_tree.nodes.new("ShaderNodeNormalMap")
+        normal_map_node.inputs["Strength"].default_value = 0.38
+        material.node_tree.links.new(normal_texture_node.outputs["Color"], normal_map_node.inputs["Color"])
+        material.node_tree.links.new(normal_map_node.outputs["Normal"], principled.inputs["Normal"])
     return material
 
 
@@ -89,6 +210,9 @@ def add_cylinder(name, location, radius, depth, material, scale_xy=(1.0, 1.0), v
     obj.scale.y = scale_xy[1]
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     apply_bevel(obj, min(bevel, depth * 0.2))
+    triangulate = obj.modifiers.new(name="Tangent Triangulation", type="TRIANGULATE")
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.modifier_apply(modifier=triangulate.name)
     assign_material(obj, material)
     for polygon in obj.data.polygons:
         polygon.use_smooth = True
@@ -142,6 +266,35 @@ def point_at(obj, target):
     obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
 
+def add_point_light(name, location, energy, light_color, radius=0.35, cutoff=8.0):
+    data = bpy.data.lights.new(name=name, type="POINT")
+    data.energy = energy
+    data.color = color(light_color)[:3]
+    data.shadow_soft_size = radius
+    data.use_custom_distance = True
+    data.cutoff_distance = cutoff
+    obj = bpy.data.objects.new(name, data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+    return obj
+
+
+def add_spot_light(name, location, target, energy, light_color, size=math.radians(55), blend=0.55, cutoff=12.0):
+    data = bpy.data.lights.new(name=name, type="SPOT")
+    data.energy = energy
+    data.color = color(light_color)[:3]
+    data.spot_size = size
+    data.spot_blend = blend
+    data.shadow_soft_size = 0.3
+    data.use_custom_distance = True
+    data.cutoff_distance = cutoff
+    obj = bpy.data.objects.new(name, data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+    point_at(obj, target)
+    return obj
+
+
 def add_room_shell(prefix, width, depth, height, floor_material, wall_material, trim_material):
     add_box(f"{prefix}_Floor", (0.0, 0.0, -0.1), (width, depth, 0.2), floor_material, bevel=0.02)
     add_box(f"{prefix}_BackWall", (0.0, depth / 2 - 0.1, height / 2), (width, 0.2, height), wall_material, bevel=0.02)
@@ -153,7 +306,7 @@ def add_room_shell(prefix, width, depth, height, floor_material, wall_material, 
     add_box(f"{prefix}_RightBaseboard", (width / 2 - 0.22, 0.0, 0.15), (0.12, depth - 0.3, 0.3), trim_material, bevel=0.03)
 
 
-def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_height=0.5):
+def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_height=0.5, arms=True):
     forward = Vector((facing[0], facing[1]))
     forward.normalize()
     right = Vector((forward.y, -forward.x))
@@ -167,6 +320,14 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
         bevel=0.08,
         rotation=rotation,
     )
+    add_box(
+        f"{prefix}_SeatCushion",
+        (x, y, seat_height + 0.11),
+        (width * 0.88, depth * 0.84, 0.12),
+        materials[0],
+        bevel=0.055,
+        rotation=rotation,
+    )
     back_center = Vector((x, y)) - forward * (depth * 0.42)
     add_box(
         f"{prefix}_Back",
@@ -174,6 +335,15 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
         (width, 0.16, 0.92),
         materials[0],
         bevel=0.08,
+        rotation=rotation,
+    )
+    cushion_center = back_center + forward * 0.025
+    add_box(
+        f"{prefix}_BackCushion",
+        (cushion_center.x, cushion_center.y, seat_height + 0.56),
+        (width * 0.86, 0.11, 0.68),
+        materials[0],
+        bevel=0.055,
         rotation=rotation,
     )
     for side in (-1.0, 1.0):
@@ -188,6 +358,28 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
                 vertices=16,
                 bevel=0.01,
             )
+    if arms:
+        for side in (-1.0, 1.0):
+            arm_xy = Vector((x, y)) + right * (side * width * 0.56)
+            add_box(
+                f"{prefix}_Arm_{side}",
+                (arm_xy.x, arm_xy.y, seat_height + 0.34),
+                (0.09, depth * 0.72, 0.1),
+                materials[1],
+                bevel=0.025,
+                rotation=rotation,
+            )
+            for longitudinal in (-1.0, 1.0):
+                post_xy = arm_xy + forward * (longitudinal * depth * 0.28)
+                add_cylinder(
+                    f"{prefix}_ArmPost_{side}_{longitudinal}",
+                    (post_xy.x, post_xy.y, seat_height + 0.18),
+                    0.028,
+                    0.34,
+                    materials[1],
+                    vertices=12,
+                    bevel=0.008,
+                )
 
 
 def add_planter(prefix, location, pot_material, leaf_material, scale=1.0):
@@ -253,7 +445,7 @@ def configure_world(background_color, strength):
 
 
 def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=30.0):
-    release_dir = repo_root / "assets" / "scenes" / scene_id / REVIEW_VERSION
+    release_dir = repo_root / "assets" / "scenes" / scene_id / RELEASE_VERSION
     source_dir = repo_root / "sources" / scene_id
     release_glb_path = release_dir / "scene.glb"
     tracked_release = subprocess.run(
@@ -263,7 +455,7 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
         check=False,
     )
     if tracked_release.returncode == 0:
-        raise RuntimeError(f"published_scene_version_is_immutable:{scene_id}@{REVIEW_VERSION}")
+        raise RuntimeError(f"published_scene_version_is_immutable:{scene_id}@{RELEASE_VERSION}")
     release_dir.mkdir(parents=True, exist_ok=True)
     source_dir.mkdir(parents=True, exist_ok=True)
     base_release_dir = repo_root / "assets" / "scenes" / scene_id / "0.1.0"
@@ -304,6 +496,7 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
         export_format="GLB",
         export_cameras=False,
         export_lights=True,
+        export_tangents=True,
         export_yup=True,
         export_apply=False,
         export_image_format="AUTO",
@@ -312,22 +505,29 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
 
 def build_personal(repo_root):
     reset_scene()
-    navy = make_material("Personal Wall Navy", "#17243A", 0.78)
+    navy = make_material("Personal Wall Navy", "#17243A", 0.78, pattern="plaster")
     midnight = make_material("Personal Midnight Trim", "#0C1524", 0.62, metallic=0.08)
-    floor = make_material("Personal Smoked Oak", "#6C4935", 0.72)
-    floor_alt = make_material("Personal Smoked Oak Alt", "#7C5740", 0.7)
-    wood = make_material("Personal Warm Oak", "#B5794B", 0.58)
-    cream = make_material("Personal Warm White", "#E8EEE9", 0.72)
-    teal = make_material("Personal Teal", "#39C0AD", 0.46, metallic=0.08)
-    blue = make_material("Personal Blue", "#4F7FEA", 0.48)
+    floor = make_material("Personal Smoked Oak", "#6C4935", 0.72, pattern="wood")
+    floor_alt = make_material("Personal Smoked Oak Alt", "#7C5740", 0.7, pattern="wood")
+    wood = make_material("Personal Warm Oak", "#B5794B", 0.58, pattern="wood", coat_weight=0.12, coat_roughness=0.32)
+    cream = make_material("Personal Warm White", "#E8EEE9", 0.72, pattern="textile", sheen_weight=0.16)
+    teal = make_material("Personal Teal", "#39C0AD", 0.58, pattern="textile", sheen_weight=0.2)
+    blue = make_material("Personal Blue", "#4F7FEA", 0.6, pattern="textile", sheen_weight=0.2)
     amber = make_material("Personal Amber Glow", "#F5B85D", 0.38, emission="#F5B85D", emission_strength=2.4)
-    screen = make_material("Personal Workspace Screen", "#DFF8F4", 0.28, emission="#9EEFE1", emission_strength=0.8)
-    rug = make_material("Personal Woven Rug", "#294A5A", 0.92)
+    screen = make_material("Personal Workspace Screen", "#DFF8F4", 0.34, emission="#9EEFE1", emission_strength=0.45, coat_weight=0.35, coat_roughness=0.18)
+    rug = make_material("Personal Woven Rug", "#294A5A", 0.92, pattern="carpet", sheen_weight=0.14)
     green = make_material("Personal Plant Green", "#3D8F70", 0.85)
-    clay = make_material("Personal Planter Clay", "#C96F4A", 0.82)
-    sky = make_material("Personal Window Sky", "#72B8D8", 0.22, emission="#72B8D8", emission_strength=0.55)
+    clay = make_material("Personal Planter Clay", "#C96F4A", 0.82, pattern="stone")
+    sky = make_material("Personal Window Sky", "#72B8D8", 0.3, emission="#72B8D8", emission_strength=0.3, coat_weight=0.5, coat_roughness=0.08)
+    ceiling = make_material("Personal Ceiling Plaster", "#C9CED0", 0.88, pattern="plaster")
+    brass = make_material("Personal Brushed Brass", "#B79558", 0.3, metallic=0.82)
+    stone = make_material("Personal Desk Stone", "#B9B7AE", 0.5, pattern="stone", coat_weight=0.18, coat_roughness=0.3)
 
     add_room_shell("Personal", 10.0, 11.0, 4.2, floor, navy, midnight)
+    add_box("Personal_CeilingInset", (0.0, 0.2, 4.105), (8.7, 9.6, 0.05), ceiling, bevel=0.025)
+    add_box("Personal_CoveBack", (0.0, 5.14, 3.9), (8.9, 0.08, 0.08), amber, bevel=0.025)
+    for x in (-4.45, 4.45):
+        add_box(f"Personal_CoveSide_{x}", (x, 0.1, 3.9), (0.08, 9.8, 0.08), amber, bevel=0.025)
     for index in range(12):
         plank_material = floor_alt if index % 3 == 0 else floor
         add_box(
@@ -347,8 +547,17 @@ def build_personal(repo_root):
     add_box("Personal_DeskTop", (0.55, 2.85, 0.82), (4.6, 1.25, 0.14), wood, bevel=0.08)
     for x in (-1.35, 2.45):
         add_box(f"Personal_DeskLeg_{x}", (x, 2.85, 0.41), (0.12, 0.92, 0.82), midnight, bevel=0.03)
+    add_box("Personal_DeskDrawer", (1.35, 2.88, 0.68), (1.1, 0.92, 0.22), navy, bevel=0.045)
+    add_box("Personal_DeskDrawerPull", (1.35, 2.28, 0.68), (0.46, 0.05, 0.045), brass, bevel=0.015)
+    add_box("Personal_DeskCableTray", (0.55, 3.18, 0.58), (2.3, 0.18, 0.1), midnight, bevel=0.025)
     add_back_screen("Personal_Workspace", (0.55, 5.27, 2.35), (4.9, 2.45), midnight, screen, teal)
     add_chair("Personal_DeskChair", (-0.55, 1.55), (0.0, 1.0), (blue, midnight), width=0.78, depth=0.76)
+    add_box("Personal_DeskMonitorFrame", (-0.15, 3.02, 1.52), (1.8, 0.14, 1.05), midnight, bevel=0.055)
+    add_box("Personal_DeskMonitor", (-0.15, 2.92, 1.52), (1.62, 0.035, 0.87), screen, bevel=0.025)
+    add_cylinder("Personal_DeskMonitorStem", (-0.15, 3.02, 1.0), 0.045, 0.38, brass, vertices=20, bevel=0.012)
+    add_box("Personal_DeskMonitorBase", (-0.15, 2.96, 0.89), (0.58, 0.34, 0.05), brass, bevel=0.025)
+    for index, (x, width, material) in enumerate(((-1.15, 0.38, cream), (-0.76, 0.3, teal), (1.75, 0.46, stone))):
+        add_box(f"Personal_DeskAccessory_{index}", (x, 2.52, 0.93 + index * 0.025), (width, 0.4, 0.08), material, bevel=0.025)
 
     add_box("Personal_ShelfBody", (3.72, 3.7, 1.75), (1.5, 0.55, 3.25), midnight, bevel=0.08)
     for z in (0.65, 1.35, 2.05, 2.75):
@@ -368,7 +577,15 @@ def build_personal(repo_root):
     add_cylinder("Personal_SideTable", (2.15, -0.15, 0.52), 0.42, 0.12, wood, vertices=40)
     add_cylinder("Personal_SideTableStem", (2.15, -0.15, 0.27), 0.06, 0.5, midnight, vertices=20)
     add_sphere("Personal_TableLamp", (2.15, -0.15, 0.82), (0.2, 0.2, 0.25), amber)
+    add_cylinder("Personal_FloorLampStem", (3.95, -2.4, 0.9), 0.035, 1.8, brass, vertices=16, bevel=0.01)
+    add_cylinder("Personal_FloorLampBase", (3.95, -2.4, 0.06), 0.34, 0.1, brass, vertices=32, bevel=0.025)
+    add_sphere("Personal_FloorLampShade", (3.95, -2.4, 1.78), (0.34, 0.34, 0.28), cream)
+    add_sphere("Personal_FloorLampGlow", (3.95, -2.4, 1.68), (0.13, 0.13, 0.13), amber)
     add_planter("Personal_Plant", (-3.65, 3.8, 0.0), clay, green, scale=1.1)
+
+    for index, (y, material) in enumerate(((-2.7, cream), (-0.7, stone), (1.3, teal))):
+        add_box(f"Personal_RightWallArt_{index}", (4.78, y, 2.25), (0.04, 1.25, 1.35), material, bevel=0.035)
+        add_box(f"Personal_RightWallArtFrame_{index}", (4.74, y, 2.25), (0.06, 1.42, 1.52), midnight, bevel=0.04)
 
     for index in range(8):
         add_box(
@@ -378,37 +595,55 @@ def build_personal(repo_root):
             wood if index % 2 else midnight,
             bevel=0.025,
         )
-    add_box("Personal_CeilingLight", (0.4, 0.5, 3.98), (3.4, 0.13, 0.06), amber, bevel=0.02)
+    add_box("Personal_CeilingLight", (0.4, 0.5, 3.98), (3.4, 0.13, 0.06), brass, bevel=0.02)
+    for x in (-0.7, 0.4, 1.5):
+        add_cylinder(f"Personal_CeilingPendant_{x}", (x, 0.5, 3.75), 0.12, 0.32, brass, vertices=24, bevel=0.025)
+        add_sphere(f"Personal_CeilingPendantGlow_{x}", (x, 0.5, 3.57), (0.13, 0.13, 0.13), amber)
 
     configure_world("#243C52", 0.35)
     add_area_light("Personal_Key", (0.0, -1.0, 3.7), (0.5, 2.3, 1.0), 1050, "#FFE0B5", 4.0)
     add_area_light("Personal_WindowFill", (-3.7, 0.2, 2.5), (0.0, 1.5, 1.1), 850, "#A8DDF2", 3.0)
     add_area_light("Personal_ScreenFill", (0.5, 4.4, 3.0), (0.5, 1.0, 1.0), 600, "#95F2E0", 2.2)
+    add_point_light("Personal_RuntimeCeiling", (0.4, 0.5, 3.55), 115, "#FFD6A0", radius=0.5, cutoff=7.5)
+    add_point_light("Personal_RuntimeDesk", (0.4, 3.25, 2.6), 75, "#9DEBDF", radius=0.35, cutoff=5.0)
+    add_point_light("Personal_RuntimeReading", (3.95, -2.4, 1.65), 70, "#FFD09A", radius=0.28, cutoff=4.5)
     render_and_export(repo_root, "personal-workspace-review-v1", (0.0, -4.45, 1.65), (0.35, 2.25, 1.55), lens=29.0)
 
 
 def build_meeting(repo_root):
     reset_scene()
-    wall = make_material("Meeting Deep Teal Wall", "#12343D", 0.8)
+    wall = make_material("Meeting Deep Teal Wall", "#12343D", 0.8, pattern="plaster")
     trim = make_material("Meeting Graphite", "#101C22", 0.52, metallic=0.18)
-    floor = make_material("Meeting Slate Floor", "#29484A", 0.82)
-    wood = make_material("Meeting Copper Oak", "#B8784B", 0.58)
+    floor = make_material("Meeting Slate Floor", "#29484A", 0.82, pattern="stone")
+    wood = make_material("Meeting Copper Oak", "#B8784B", 0.58, pattern="wood", coat_weight=0.16, coat_roughness=0.3)
     aqua = make_material("Meeting Aqua", "#46D6C7", 0.42, metallic=0.06)
     cyan = make_material("Meeting Cyan Light", "#84EDF0", 0.3, emission="#84EDF0", emission_strength=1.65)
-    screen = make_material("Meeting Display", "#DFF8F5", 0.24, emission="#B6F3EA", emission_strength=0.72)
-    white = make_material("Meeting Soft White", "#E8F0ED", 0.7)
-    chair_blue = make_material("Meeting Chair Blue", "#2B6D7C", 0.75)
-    chair_green = make_material("Meeting Chair Green", "#367A6B", 0.75)
-    chair_rust = make_material("Meeting Chair Rust", "#A85F48", 0.76)
-    chair_gold = make_material("Meeting Chair Gold", "#B8954A", 0.76)
+    screen = make_material("Meeting Display", "#DFF8F5", 0.3, emission="#B6F3EA", emission_strength=0.42, coat_weight=0.35, coat_roughness=0.16)
+    white = make_material("Meeting Soft White", "#E8F0ED", 0.78, pattern="plaster")
+    chair_blue = make_material("Meeting Chair Blue", "#2B6D7C", 0.76, pattern="textile", sheen_weight=0.2)
+    chair_green = make_material("Meeting Chair Green", "#367A6B", 0.76, pattern="textile", sheen_weight=0.2)
+    chair_rust = make_material("Meeting Chair Rust", "#A85F48", 0.77, pattern="textile", sheen_weight=0.2)
+    chair_gold = make_material("Meeting Chair Gold", "#B8954A", 0.77, pattern="textile", sheen_weight=0.2)
     green = make_material("Meeting Plant Green", "#3C8B68", 0.85)
-    clay = make_material("Meeting Planter", "#B76549", 0.8)
+    clay = make_material("Meeting Planter", "#B76549", 0.8, pattern="stone")
+    rug = make_material("Meeting Rug", "#18333A", 0.94, pattern="carpet", sheen_weight=0.1)
+    brass = make_material("Meeting Brushed Brass", "#B69B66", 0.32, metallic=0.78)
+    glass = make_material("Meeting Frosted Glass", "#B9DDDA", 0.26, coat_weight=0.55, coat_roughness=0.12)
 
     add_room_shell("Meeting", 14.0, 13.0, 4.6, floor, wall, trim)
-    add_box("Meeting_Rug", (0.0, 0.65, 0.04), (9.1, 6.7, 0.08), make_material("Meeting Rug", "#18333A", 0.94), bevel=0.12)
+    add_box("Meeting_CeilingInset", (0.0, 0.2, 4.5), (12.5, 11.4, 0.06), white, bevel=0.03)
+    add_box("Meeting_CeilingRecess", (0.0, 0.75, 4.44), (7.3, 5.7, 0.08), trim, bevel=0.16)
+    add_box("Meeting_Rug", (0.0, 0.65, 0.04), (9.1, 6.7, 0.08), rug, bevel=0.12)
     add_cylinder("Meeting_TableTop", (0.0, 0.75, 0.83), 1.0, 0.18, wood, scale_xy=(3.25, 1.62), vertices=64, bevel=0.07)
+    add_cylinder("Meeting_TableEdge", (0.0, 0.75, 0.75), 1.02, 0.08, brass, scale_xy=(3.27, 1.64), vertices=64, bevel=0.025)
     add_cylinder("Meeting_TableBase", (0.0, 0.75, 0.39), 0.72, 0.78, trim, scale_xy=(1.55, 0.9), vertices=48, bevel=0.06)
     add_cylinder("Meeting_TableCenter", (0.0, 0.75, 0.97), 0.28, 0.08, aqua, scale_xy=(1.8, 0.7), vertices=40, bevel=0.025)
+    for index, (x, y) in enumerate(((-1.8, -0.05), (1.8, -0.05), (-1.8, 1.55), (1.8, 1.55))):
+        add_cylinder(f"Meeting_Coaster_{index}", (x, y, 0.96), 0.16, 0.025, brass, vertices=24, bevel=0.008)
+        add_cylinder(f"Meeting_Glass_{index}", (x, y, 1.08), 0.08, 0.22, glass, vertices=24, bevel=0.015)
+    add_cylinder("Meeting_CenterVase", (-0.72, 0.75, 1.13), 0.14, 0.28, glass, vertices=32, bevel=0.035)
+    for index, offset in enumerate(((-0.11, 0.0), (0.1, 0.05), (0.0, -0.09))):
+        add_sphere(f"Meeting_CenterLeaf_{index}", (-0.72 + offset[0], 0.75 + offset[1], 1.4 + index * 0.07), (0.1, 0.065, 0.21), green)
 
     chairs = [
         ("Front", (0.0, -2.05), (0.0, 1.0), chair_blue),
@@ -430,6 +665,12 @@ def build_meeting(repo_root):
             bevel=0.08,
         )
 
+    add_box("Meeting_Credenza", (5.55, 4.65, 0.62), (2.1, 0.72, 1.1), wood, bevel=0.09)
+    add_box("Meeting_CredenzaTop", (5.55, 4.65, 1.21), (2.25, 0.82, 0.08), brass, bevel=0.035)
+    for index in range(3):
+        add_box(f"Meeting_CredenzaDoor_{index}", (4.88 + index * 0.68, 4.24, 0.65), (0.58, 0.045, 0.82), wall, bevel=0.035)
+        add_box(f"Meeting_CredenzaPull_{index}", (4.88 + index * 0.68, 4.2, 0.66), (0.18, 0.035, 0.035), brass, bevel=0.01)
+
     add_torus("Meeting_CeilingHalo", (0.0, 0.75, 4.08), 2.75, 0.075, cyan)
     add_cylinder("Meeting_CeilingHub", (0.0, 0.75, 4.05), 0.34, 0.12, aqua, vertices=40)
     for angle in range(0, 360, 90):
@@ -447,29 +688,52 @@ def build_meeting(repo_root):
     for x in (-5.6, 5.6):
         add_box(f"Meeting_LightColumn_{x}", (x, 2.7, 2.2), (0.12, 0.16, 2.8), cyan, bevel=0.04)
 
+    for y in (-4.7, -2.2, 3.8):
+        add_box(f"Meeting_CeilingRail_{y}", (0.0, y, 4.37), (9.5, 0.08, 0.08), brass, bevel=0.025)
+        for x in (-3.6, 0.0, 3.6):
+            add_cylinder(f"Meeting_RailSpot_{x}_{y}", (x, y, 4.22), 0.095, 0.22, trim, vertices=20, bevel=0.02)
+
     configure_world("#173C45", 0.33)
     add_area_light("Meeting_Key", (0.0, -0.5, 4.15), (0.0, 0.8, 0.8), 1450, "#F7D7B2", 5.5)
     add_area_light("Meeting_DisplayFill", (1.0, 5.2, 3.4), (0.0, 0.3, 1.2), 920, "#9DF1E6", 3.2)
     add_area_light("Meeting_FrontFill", (0.0, -4.7, 3.2), (0.0, 0.8, 1.0), 760, "#A7DCE2", 4.0)
-    render_and_export(repo_root, "meeting-room-review-v1", (-2.3, -5.25, 1.67), (0.25, 1.05, 1.45), lens=29.0)
+    for index, angle in enumerate((45, 135, 225, 315)):
+        radians = math.radians(angle)
+        add_point_light(
+            f"Meeting_RuntimeHalo_{index}",
+            (math.cos(radians) * 1.9, 0.75 + math.sin(radians) * 1.9, 3.85),
+            95,
+            "#D6F8EF",
+            radius=0.45,
+            cutoff=7.0,
+        )
+    add_spot_light("Meeting_RuntimeDisplay", (1.35, 4.8, 4.15), (1.35, 6.1, 2.0), 135, "#9DECE2", cutoff=6.5)
+    render_and_export(repo_root, "meeting-room-review-v1", (-3.8, -5.25, 1.67), (0.25, 1.05, 1.45), lens=29.0)
 
 
 def build_presentation(repo_root):
     reset_scene()
-    wall = make_material("Presentation Ink Wall", "#191927", 0.82)
+    wall = make_material("Presentation Ink Wall", "#191927", 0.82, pattern="plaster")
     trim = make_material("Presentation Black Metal", "#0B0B12", 0.45, metallic=0.25)
-    floor = make_material("Presentation Charcoal Floor", "#292733", 0.8)
-    stage = make_material("Presentation Stage Oak", "#9B6441", 0.6)
-    coral = make_material("Presentation Coral", "#D85A66", 0.5)
+    floor = make_material("Presentation Charcoal Floor", "#292733", 0.88, pattern="carpet", sheen_weight=0.08)
+    stage = make_material("Presentation Stage Oak", "#9B6441", 0.6, pattern="wood", coat_weight=0.15, coat_roughness=0.3)
+    coral = make_material("Presentation Coral", "#D85A66", 0.7, pattern="textile", sheen_weight=0.18)
     amber = make_material("Presentation Amber", "#F3B64B", 0.35, emission="#F3B64B", emission_strength=1.8)
-    cream = make_material("Presentation Screen", "#FFF0D2", 0.24, emission="#FFE1A3", emission_strength=0.72)
-    blue = make_material("Presentation Audience Blue", "#354D73", 0.78)
-    burgundy = make_material("Presentation Audience Burgundy", "#713A4C", 0.78)
-    purple = make_material("Presentation Audience Purple", "#59436F", 0.78)
-    white = make_material("Presentation Soft White", "#ECE9E5", 0.68)
+    cream = make_material("Presentation Screen", "#FFF0D2", 0.32, emission="#FFE1A3", emission_strength=0.42, coat_weight=0.32, coat_roughness=0.18)
+    blue = make_material("Presentation Audience Blue", "#354D73", 0.8, pattern="textile", sheen_weight=0.2)
+    burgundy = make_material("Presentation Audience Burgundy", "#713A4C", 0.8, pattern="textile", sheen_weight=0.2)
+    purple = make_material("Presentation Audience Purple", "#59436F", 0.8, pattern="textile", sheen_weight=0.2)
+    white = make_material("Presentation Soft White", "#ECE9E5", 0.78, pattern="plaster")
+    brass = make_material("Presentation Brushed Brass", "#B99A5A", 0.3, metallic=0.8)
+    aisle = make_material("Presentation Aisle Carpet", "#202332", 0.94, pattern="carpet")
 
     add_room_shell("Presentation", 16.0, 18.0, 6.0, floor, wall, trim)
+    add_box("Presentation_CeilingInset", (0.0, 0.0, 5.9), (14.5, 16.3, 0.06), white, bevel=0.035)
+    add_box("Presentation_CeilingRecess", (0.0, 1.0, 5.83), (11.7, 13.2, 0.08), wall, bevel=0.22)
+    add_box("Presentation_CenterAisle", (0.0, -1.1, 0.025), (2.2, 12.3, 0.05), aisle, bevel=0.08)
     add_box("Presentation_Stage", (0.0, 6.45, 0.3), (12.4, 4.25, 0.6), stage, bevel=0.1)
+    add_box("Presentation_StageEdge", (0.0, 4.38, 0.35), (12.1, 0.12, 0.5), brass, bevel=0.035)
+    add_box("Presentation_StageGlow", (0.0, 4.3, 0.58), (11.5, 0.045, 0.07), amber, bevel=0.018)
     for index in range(3):
         add_box(
             f"Presentation_StageStep_{index}",
@@ -486,6 +750,9 @@ def build_presentation(repo_root):
     add_box("Presentation_Podium", (-4.65, 6.15, 0.92), (1.05, 0.72, 1.45), trim, bevel=0.08)
     add_box("Presentation_PodiumTop", (-4.65, 6.0, 1.68), (1.25, 0.85, 0.12), stage, bevel=0.05)
     add_box("Presentation_PodiumAccent", (-4.65, 5.6, 1.0), (0.5, 0.04, 0.65), amber, bevel=0.04)
+    add_box("Presentation_PodiumDisplay", (-4.65, 5.54, 1.08), (0.38, 0.025, 0.3), cream, bevel=0.025)
+    add_cylinder("Presentation_PodiumMicStem", (-4.25, 5.92, 1.94), 0.025, 0.58, brass, vertices=14, bevel=0.006)
+    add_sphere("Presentation_PodiumMic", (-4.25, 5.92, 2.22), (0.065, 0.065, 0.09), trim)
 
     rows = [(-3.75, blue), (-1.05, burgundy), (1.65, purple)]
     seat_xs = (-4.5, -2.15, 2.15, 4.5)
@@ -511,11 +778,19 @@ def build_presentation(repo_root):
                 burgundy if index % 2 else blue,
                 bevel=0.08,
             )
+    for side in (-7.28, 7.28):
+        for index, y in enumerate((-5.5, -1.8, 1.9, 5.6)):
+            add_box(f"Presentation_WallSconceBack_{side}_{index}", (side, y, 2.4), (0.1, 0.46, 0.8), brass, bevel=0.07)
+            add_sphere(f"Presentation_WallSconceGlow_{side}_{index}", (side - math.copysign(0.08, side), y, 2.4), (0.1, 0.2, 0.28), amber)
     for y in (-4.2, 0.2, 4.2):
         add_box(f"Presentation_CeilingBar_{y}", (0.0, y, 5.55), (10.5, 0.16, 0.12), amber, bevel=0.04)
     for x in (-5.2, -2.6, 2.6, 5.2):
         add_cylinder(f"Presentation_Spot_{x}", (x, 4.1, 5.25), 0.18, 0.38, trim, vertices=24)
         add_sphere(f"Presentation_SpotGlow_{x}", (x, 4.0, 5.0), (0.14, 0.14, 0.16), amber)
+
+    for index, y in enumerate((-5.0, -1.6, 1.8)):
+        add_box(f"Presentation_AcousticCloud_{index}", (0.0, y, 5.55), (6.8 - index * 0.45, 1.25, 0.12), purple if index % 2 else blue, bevel=0.16)
+        add_box(f"Presentation_AcousticCloudTrim_{index}", (0.0, y, 5.47), (6.45 - index * 0.45, 1.0, 0.04), brass, bevel=0.08)
 
     add_box("Presentation_ExitLeft", (-7.5, 7.2, 2.0), (0.08, 1.2, 2.5), white, bevel=0.06)
     add_box("Presentation_ExitRight", (7.5, 7.2, 2.0), (0.08, 1.2, 2.5), white, bevel=0.06)
@@ -524,23 +799,36 @@ def build_presentation(repo_root):
     add_area_light("Presentation_StageKey", (0.0, 4.1, 5.4), (0.0, 6.5, 0.8), 2200, "#FFD18A", 5.0)
     add_area_light("Presentation_AudienceFill", (0.0, -4.8, 4.8), (0.0, -0.5, 0.8), 1150, "#A7B9E8", 6.0)
     add_area_light("Presentation_ScreenFill", (0.8, 7.5, 4.6), (0.0, 2.0, 1.4), 1050, "#FFD79B", 4.0)
+    for index, x in enumerate((-5.2, -2.6, 2.6, 5.2)):
+        add_spot_light(
+            f"Presentation_RuntimeStageSpot_{index}",
+            (x, 4.0, 5.0),
+            (x * 0.45, 6.25, 0.7),
+            185,
+            "#FFD49B",
+            size=math.radians(48),
+            cutoff=10.0,
+        )
+    for side in (-6.9, 6.9):
+        add_point_light(f"Presentation_RuntimeWall_{side}", (side, -1.2, 2.4), 85, "#F5B875", radius=0.35, cutoff=6.0)
+    add_point_light("Presentation_RuntimeAudience", (0.0, -3.8, 4.8), 105, "#AFC2EE", radius=0.65, cutoff=9.0)
     render_and_export(repo_root, "presentation-room-review-v1", (0.0, -7.4, 1.72), (0.25, 5.7, 2.25), lens=27.0)
 
 
 def main():
-    global REVIEW_VERSION, SKIP_RENDER
+    global RELEASE_VERSION, SKIP_RENDER
     if bpy.app.version[:3] != BLENDER_VERSION:
         raise RuntimeError(f"expected_blender_{BLENDER_VERSION}_got_{bpy.app.version[:3]}")
     args = parse_args()
     SKIP_RENDER = args.skip_render
-    REVIEW_VERSION = args.version
-    if not re.fullmatch(r"0\.1\.\d+", REVIEW_VERSION):
-        raise RuntimeError(f"invalid_review_version:{REVIEW_VERSION}")
+    RELEASE_VERSION = args.version
+    if not re.fullmatch(r"\d+\.\d+\.\d+", RELEASE_VERSION):
+        raise RuntimeError(f"invalid_release_version:{RELEASE_VERSION}")
     repo_root = Path(args.repo_root).resolve()
     build_personal(repo_root)
     build_meeting(repo_root)
     build_presentation(repo_root)
-    print("Built three Vrata review scenes.")
+    print(f"Built three Vrata scene candidates at {RELEASE_VERSION}.")
 
 
 main()

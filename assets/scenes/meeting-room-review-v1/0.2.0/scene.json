@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "meeting-room-review-v1",
+  "label": "Meeting Room Art Candidate",
+  "source": "Vrata original procedural Blender art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 5.25
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "meeting-room-review-v1-front-seat",
+        "position": {
+          "x": 0,
+          "y": 0.48,
+          "z": 2.05
+        },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.54,
+        "label": "Front chair"
+      },
+      {
+        "id": "meeting-room-review-v1-back-seat",
+        "position": {
+          "x": 0,
+          "y": 0.48,
+          "z": -3.55
+        },
+        "yaw": 3.142,
+        "seatHeight": 0.06,
+        "radius": 0.54,
+        "label": "Back chair"
+      },
+      {
+        "id": "meeting-room-review-v1-left-seat",
+        "position": {
+          "x": -4,
+          "y": 0.48,
+          "z": -0.75
+        },
+        "yaw": -1.571,
+        "seatHeight": 0.06,
+        "radius": 0.54,
+        "label": "Left chair"
+      },
+      {
+        "id": "meeting-room-review-v1-right-seat",
+        "position": {
+          "x": 4,
+          "y": 0.48,
+          "z": -0.75
+        },
+        "yaw": 1.571,
+        "seatHeight": 0.06,
+        "radius": 0.54,
+        "label": "Right chair"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Shared display",
+      "kind": "wall",
+      "widthM": 5.7,
+      "heightM": 2.75,
+      "widthPx": 1920,
+      "heightPx": 1080,
+      "transform": {
+        "x": 1.35,
+        "y": 2.52,
+        "z": -6.12,
+        "yaw": 0
+      },
+      "visible": true
+    },
+    {
+      "surfaceId": "whiteboard-wall",
+      "label": "Collaboration wall",
+      "kind": "wall",
+      "widthM": 4.6,
+      "heightM": 2.4,
+      "widthPx": 1920,
+      "heightPx": 1000,
+      "transform": {
+        "x": -6.68,
+        "y": 2.25,
+        "z": -0.5,
+        "yaw": 1.571
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 14,
+    "height": 4.6,
+    "depth": 13
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "meeting-room-review-v1-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "art-direction"
+  },
+  "notes": "Art-direction candidate: four-seat oval table, shared display, collaboration wall, original embedded PBR material kit, acoustic treatment, and spatially distinct seating."
+}

@@ -9,6 +9,12 @@ import { buildManifest, serializeManifest } from "./build-manifest.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(scriptPath), "..");
 const maxBundleBytes = 15 * 1024 * 1024;
+const maxPunctualLightIntensity = 10;
+const knownOverbrightReleases = new Set([
+  "meeting-room-review-v1@0.2.0",
+  "personal-workspace-review-v1@0.2.0",
+  "presentation-room-review-v1@0.2.0"
+]);
 
 function assert(condition, code) {
   if (!condition) throw new Error(code);
@@ -57,6 +63,13 @@ function validateManifestShape(scene, releaseDir) {
   }
 }
 
+function parseGlbJson(glb) {
+  assert(glb.readUInt32LE(0) === 0x46546c67, "invalid_glb_magic");
+  const jsonLength = glb.readUInt32LE(12);
+  assert(glb.readUInt32LE(16) === 0x4e4f534a, "missing_glb_json_chunk");
+  return JSON.parse(glb.subarray(20, 20 + jsonLength).toString("utf8").trimEnd());
+}
+
 async function validateRelease(releaseDir, releaseRecord) {
   const scene = JSON.parse(await readFile(join(releaseDir, "scene.json"), "utf8"));
   validateManifestShape(scene, releaseDir);
@@ -72,6 +85,16 @@ async function validateRelease(releaseDir, releaseRecord) {
   assert(releaseRecord.stats.textures <= 48, `texture_budget_exceeded:${scene.sceneId}`);
 
   const glb = await readFile(join(releaseDir, scene.glbPath));
+  const releaseKey = `${scene.sceneId}@${basename(releaseDir)}`;
+  if (!knownOverbrightReleases.has(releaseKey)) {
+    const gltf = parseGlbJson(glb);
+    for (const light of gltf.extensions?.KHR_lights_punctual?.lights ?? []) {
+      assert(
+        light.intensity === undefined || light.intensity <= maxPunctualLightIntensity,
+        `punctual_light_intensity_exceeded:${scene.sceneId}:${light.name ?? "unnamed"}`
+      );
+    }
+  }
   const report = await validator.validateBytes(new Uint8Array(glb), {
     uri: `${scene.sceneId}/${basename(releaseDir)}/scene.glb`,
     maxIssues: 200
@@ -100,7 +123,7 @@ const releaseDirs = await releaseDirectories();
 const releaseKeys = new Set(generatedManifest.releases.map((release) => `${release.sceneId}@${release.version}`));
 assert(releaseKeys.size === generatedManifest.releases.length, "duplicate_scene_release");
 for (const sceneId of ["personal-workspace-review-v1", "meeting-room-review-v1", "presentation-room-review-v1"]) {
-  assert(releaseKeys.has(`${sceneId}@0.2.0`), `missing_current_art_candidate:${sceneId}`);
+  assert(releaseKeys.has(`${sceneId}@0.2.1`), `missing_current_art_candidate:${sceneId}`);
 }
 for (let index = 0; index < releaseDirs.length; index += 1) {
   await validateRelease(releaseDirs[index], generatedManifest.releases[index]);

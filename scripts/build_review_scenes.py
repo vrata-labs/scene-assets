@@ -14,6 +14,7 @@ BLENDER_VERSION = (4, 5, 12)
 SKIP_RENDER = False
 RELEASE_VERSION = ""
 TEXTURE_SIZE = 256
+PUNCTUAL_LIGHT_ENERGY_SCALE = 0.0005
 
 
 def parse_args():
@@ -268,7 +269,8 @@ def point_at(obj, target):
 
 def add_point_light(name, location, energy, light_color, radius=0.35, cutoff=8.0):
     data = bpy.data.lights.new(name=name, type="POINT")
-    data.energy = energy
+    # Blender exports point/spot watts as candela; keep runtime lights below clipping range.
+    data.energy = energy * PUNCTUAL_LIGHT_ENERGY_SCALE
     data.color = color(light_color)[:3]
     data.shadow_soft_size = radius
     data.use_custom_distance = True
@@ -281,7 +283,7 @@ def add_point_light(name, location, energy, light_color, radius=0.35, cutoff=8.0
 
 def add_spot_light(name, location, target, energy, light_color, size=math.radians(55), blend=0.55, cutoff=12.0):
     data = bpy.data.lights.new(name=name, type="SPOT")
-    data.energy = energy
+    data.energy = energy * PUNCTUAL_LIGHT_ENERGY_SCALE
     data.color = color(light_color)[:3]
     data.spot_size = size
     data.spot_blend = blend

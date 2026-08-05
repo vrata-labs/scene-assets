@@ -1,0 +1,28 @@
+{
+  "name": "@vrata/scene-assets",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:scenes": "bash scripts/build-scenes.sh",
+    "manifest": "node scripts/build-manifest.mjs",
+    "manifest:check": "node scripts/build-manifest.mjs --check",
+    "validate": "node scripts/validate-assets.mjs",
+    "inspect": "for asset in assets/scenes/*/*/scene.glb; do gltf-transform inspect \"$asset\"; done"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "4.4.2",
+    "@gltf-transform/core": "4.4.2",
+    "@gltf-transform/extensions": "4.4.2",
+    "gltf-validator": "2.0.0-dev.3.10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
+  }
+}

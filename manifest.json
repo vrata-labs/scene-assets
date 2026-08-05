@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "blenderVersion": "4.5.12 LTS",
+  "platformValidatorCommit": "88c8cbb53f9888a5c84204d7388006a870bdd521",
+  "releases": [
+    {
+      "sceneId": "meeting-room-review-v1",
+      "version": "0.1.0",
+      "releasePath": "assets/scenes/meeting-room-review-v1/0.1.0",
+      "files": {
+        "scene.json": {
+          "sha256": "82d3709c49c1814c1872f0a73cb8ec46b9af3b79545c39f4eb25133e1f2b87de",
+          "sizeBytes": 2879
+        },
+        "scene.glb": {
+          "sha256": "c212f31d7e3bba1003081e3850b999d9e644760d5948e81223a1d02f77846a77",
+          "sizeBytes": 968880
+        },
+        "preview.webp": {
+          "sha256": "7ee6088813607a3f893bc744351eeec411660bf6e956a5a71b302c0b8cef31eb",
+          "sizeBytes": 71966
+        },
+        "LICENSES.md": {
+          "sha256": "39163d1b4d8142714013cbcf7a07855e918056797fe88b5086146839341e34c0",
+          "sizeBytes": 292
+        }
+      },
+      "stats": {
+        "triangles": 25028,
+        "nodes": 75,
+        "meshes": 72,
+        "primitives": 72,
+        "materials": 15,
+        "textures": 0,
+        "animations": 0
+      }
+    },
+    {
+      "sceneId": "personal-workspace-review-v1",
+      "version": "0.1.0",
+      "releasePath": "assets/scenes/personal-workspace-review-v1/0.1.0",
+      "files": {
+        "scene.json": {
+          "sha256": "bb094325c3a29856d896631f87b60f2504394bde3e41a48a3e310a023abd0f1c",
+          "sizeBytes": 2049
+        },
+        "scene.glb": {
+          "sha256": "06642a481d66bcd5587ded94c40b70ba435328e148e7b4598e64ed2a5981c6b7",
+          "sizeBytes": 995036
+        },
+        "preview.webp": {
+          "sha256": "9f9a86561f0058ae2a4547ab100d5fca330693d89240fe77be4ffaa6fda19b86",
+          "sizeBytes": 36894
+        },
+        "LICENSES.md": {
+          "sha256": "5a23fe44f4a9e6d31e59f0ca2383a60db901060e23c373a75f3415222333e308",
+          "sizeBytes": 298
+        }
+      },
+      "stats": {
+        "triangles": 19368,
+        "nodes": 78,
+        "meshes": 75,
+        "primitives": 75,
+        "materials": 14,
+        "textures": 0,
+        "animations": 0
+      }
+    },
+    {
+      "sceneId": "presentation-room-review-v1",
+      "version": "0.1.0",
+      "releasePath": "assets/scenes/presentation-room-review-v1/0.1.0",
+      "files": {
+        "scene.json": {
+          "sha256": "9f344ddef101f3466e9c93f91fc9069bd3e8fc22322cd3b7b60aa8f92a02a5ef",
+          "sizeBytes": 4360
+        },
+        "scene.glb": {
+          "sha256": "b122fcb320917da8ce2c5a3b4372e32d5c2ec288e2f9a3a9d3d74a3c4cba0a4c",
+          "sizeBytes": 1305028
+        },
+        "preview.webp": {
+          "sha256": "49ae996574f11736bf4f3a6a131e8d49ca036c7586ffa810552b085b1193ea42",
+          "sizeBytes": 38476
+        },
+        "LICENSES.md": {
+          "sha256": "abf103c3753d6e0363da1143aa81a35d65112cec9de255b5d98d99407b8c006a",
+          "sizeBytes": 297
+        }
+      },
+      "stats": {
+        "triangles": 30052,
+        "nodes": 126,
+        "meshes": 123,
+        "primitives": 123,
+        "materials": 11,
+        "textures": 0,
+        "animations": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+name: Validate scene assets
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scene assets
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install asset dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Reject changes to published version paths
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          while IFS= read -r path; do
+            if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
+              echo "published_scene_version_is_immutable:$path" >&2
+              exit 1
+            fi
+          done < <(git diff --name-only "$BASE_SHA" HEAD -- assets/scenes)
+
+      - name: Read platform validator lock
+        id: platform-ref
+        shell: bash
+        run: |
+          sha="$(tr -d '\r\n' < platform-validator.lock)"
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "invalid_platform_validator_lock" >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout pinned platform validator
+        uses: actions/checkout@v4
+        with:
+          repository: vrata-labs/platform
+          ref: ${{ steps.platform-ref.outputs.sha }}
+          path: .platform
+
+      - name: Build platform scene validator
+        run: |
+          pnpm --dir .platform install --frozen-lockfile
+          pnpm --dir .platform --filter @vrata/asset-pipeline build
+
+      - name: Validate release manifest and GLB files
+        run: pnpm validate
+
+      - name: Inspect GLB files
+        run: pnpm inspect
+
+      - name: Validate Scene Bundle contract
+        shell: bash
+        run: |
+          for manifest in assets/scenes/*/*/scene.json; do
+            node .platform/packages/asset-pipeline/dist/cli.js scenes validate "$(dirname "$manifest")"
+          done

@@ -6,17 +6,18 @@ Scene sources are generated and saved with Blender 4.5.12 LTS. One Blender
 unit equals one meter. The walkable floor is at Z=0 in Blender and Y=0 after
 glTF export.
 
-## Review Releases
+## Release Tracks
 
-The `0.1.x` line is for visual blockout review. It must remain technically
-loadable through the normal Vrata Scene Bundle path, but it is not the final
-`1.0.0` product art release.
+The `0.1.x` line is immutable visual blockout history. The `0.2.x` line is for
+art-direction candidates with original embedded PBR textures, detailed props,
+and runtime lighting. Neither line is an active product template.
 
-Blender 4.5 bevel evaluation currently preserves scene structure, validation
-stats, and rendered previews but is not bit-identical at the GLB buffer level
-across fresh processes. For `0.1.x`, the published full Git commit SHA and its
-checked `manifest.json` are authoritative. Product `1.0.0` promotion remains
-blocked until deterministic post-processing produces repeatable GLB hashes.
+Fresh procedural regeneration may reorder evaluated bevel buffers. Release
+reproduction therefore starts from the tracked source blend after modifiers
+have been applied. Independent Blender 4.5.12 processes exporting the same
+tracked source are byte-identical. `pnpm verify:source-exports` compares those
+exports with the candidate GLBs before publication. The published full Git
+commit SHA and checked `manifest.json` remain authoritative.
 
 ## Rights
 

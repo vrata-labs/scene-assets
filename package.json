@@ -13,6 +13,7 @@
     "manifest": "node scripts/build-manifest.mjs",
     "manifest:check": "node scripts/build-manifest.mjs --check",
     "validate": "node scripts/validate-assets.mjs",
+    "validate:template-candidates": "node scripts/validate-template-candidates.mjs",
     "inspect": "for asset in assets/scenes/*/*/scene.glb; do gltf-transform inspect \"$asset\"; done"
   },
   "devDependencies": {

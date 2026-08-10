@@ -5,14 +5,17 @@ Original, versioned scene bundles for Vrata web and XR rooms.
 The current release track contains three art-direction candidates. These are
 not active product templates yet:
 
-- `personal-workspace-review-v1/0.2.1`
-- `meeting-room-review-v1/0.2.1`
-- `presentation-room-review-v1/0.2.1`
+- `personal-workspace-review-v1/0.2.2`
+- `meeting-room-review-v1/0.2.2`
+- `presentation-room-review-v1/0.2.2`
 
 The `0.1.x` paths remain immutable blockout history. `0.2.0` adds an original
 embedded PBR material kit, detailed furniture and fixtures, layered ceilings,
 and exportable punctual lights for runtime art-direction review. `0.2.1`
 calibrates those lights for the Three.js runtime's physical intensity units.
+`0.2.2` aligns media geometry with the template surface contracts, clears the
+runtime planes from decorative overlays, and consolidates static furniture for
+mobile/XR mesh headroom.
 
 ## Layout
 
@@ -41,7 +44,7 @@ must use a new version directory.
 
 ```bash
 pnpm install
-RELEASE_VERSION=0.2.1 BLENDER_BIN=/path/to/blender pnpm build:scenes
+RELEASE_VERSION=0.2.2 BLENDER_BIN=/path/to/blender pnpm build:scenes
 pnpm validate
 pnpm inspect
 ```
@@ -50,7 +53,7 @@ After generating a candidate, confirm that the tracked Blender sources
 reproduce the release GLBs byte-for-byte:
 
 ```bash
-RELEASE_VERSION=0.2.1 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
+RELEASE_VERSION=0.2.2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
 ```
 
 The Blender source is procedural and uses no external meshes, textures,

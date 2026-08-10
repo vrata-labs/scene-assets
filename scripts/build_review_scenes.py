@@ -203,6 +203,34 @@ def add_box(name, location, dimensions, material, bevel=0.05, rotation=0.0):
     return obj
 
 
+def join_mesh_objects(name, objects):
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objects:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = objects[0]
+    bpy.ops.object.join()
+    joined = bpy.context.object
+    joined.name = name
+    joined.data.name = name
+
+    materials = []
+    material_indices = {}
+    slot_remap = {}
+    for slot_index, slot in enumerate(joined.material_slots):
+        material_key = slot.material.as_pointer()
+        if material_key not in material_indices:
+            material_indices[material_key] = len(materials)
+            materials.append(slot.material)
+        slot_remap[slot_index] = material_indices[material_key]
+    polygon_material_indices = [slot_remap[polygon.material_index] for polygon in joined.data.polygons]
+    joined.data.materials.clear()
+    for material in materials:
+        joined.data.materials.append(material)
+    for polygon, material_index in zip(joined.data.polygons, polygon_material_indices):
+        polygon.material_index = material_index
+    return joined
+
+
 def add_cylinder(name, location, radius, depth, material, scale_xy=(1.0, 1.0), vertices=48, bevel=0.04):
     bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=location)
     obj = bpy.context.object
@@ -314,44 +342,45 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
     right = Vector((forward.y, -forward.x))
     rotation = math.atan2(-forward.x, forward.y)
     x, y = center
-    add_box(
+    parts = []
+    parts.append(add_box(
         f"{prefix}_Seat",
         (x, y, seat_height),
         (width, depth, 0.16),
         materials[0],
         bevel=0.08,
         rotation=rotation,
-    )
-    add_box(
+    ))
+    parts.append(add_box(
         f"{prefix}_SeatCushion",
         (x, y, seat_height + 0.11),
         (width * 0.88, depth * 0.84, 0.12),
         materials[0],
         bevel=0.055,
         rotation=rotation,
-    )
+    ))
     back_center = Vector((x, y)) - forward * (depth * 0.42)
-    add_box(
+    parts.append(add_box(
         f"{prefix}_Back",
         (back_center.x, back_center.y, seat_height + 0.55),
         (width, 0.16, 0.92),
         materials[0],
         bevel=0.08,
         rotation=rotation,
-    )
+    ))
     cushion_center = back_center + forward * 0.025
-    add_box(
+    parts.append(add_box(
         f"{prefix}_BackCushion",
         (cushion_center.x, cushion_center.y, seat_height + 0.56),
         (width * 0.86, 0.11, 0.68),
         materials[0],
         bevel=0.055,
         rotation=rotation,
-    )
+    ))
     for side in (-1.0, 1.0):
         for longitudinal in (-1.0, 1.0):
             leg_xy = Vector((x, y)) + right * (side * width * 0.34) + forward * (longitudinal * depth * 0.28)
-            add_cylinder(
+            parts.append(add_cylinder(
                 f"{prefix}_Leg_{side}_{longitudinal}",
                 (leg_xy.x, leg_xy.y, seat_height * 0.5),
                 0.035,
@@ -359,21 +388,21 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
                 materials[1],
                 vertices=16,
                 bevel=0.01,
-            )
+            ))
     if arms:
         for side in (-1.0, 1.0):
             arm_xy = Vector((x, y)) + right * (side * width * 0.56)
-            add_box(
+            parts.append(add_box(
                 f"{prefix}_Arm_{side}",
                 (arm_xy.x, arm_xy.y, seat_height + 0.34),
                 (0.09, depth * 0.72, 0.1),
                 materials[1],
                 bevel=0.025,
                 rotation=rotation,
-            )
+            ))
             for longitudinal in (-1.0, 1.0):
                 post_xy = arm_xy + forward * (longitudinal * depth * 0.28)
-                add_cylinder(
+                parts.append(add_cylinder(
                     f"{prefix}_ArmPost_{side}_{longitudinal}",
                     (post_xy.x, post_xy.y, seat_height + 0.18),
                     0.028,
@@ -381,7 +410,8 @@ def add_chair(prefix, center, facing, materials, width=0.72, depth=0.7, seat_hei
                     materials[1],
                     vertices=12,
                     bevel=0.008,
-                )
+                ))
+    return join_mesh_objects(prefix, parts)
 
 
 def add_planter(prefix, location, pot_material, leaf_material, scale=1.0):
@@ -403,22 +433,24 @@ def add_back_screen(prefix, center, size, frame_material, screen_material, accen
     add_box(f"{prefix}_Screen", (x, y - 0.12, z), (width, 0.05, height), screen_material, bevel=0.04)
     bar_width = width * 0.09
     base_x = x - width * 0.28
+    overlays = []
     for index, ratio in enumerate((0.35, 0.62, 0.48, 0.78)):
         bar_height = height * ratio * 0.55
-        add_box(
+        overlays.append(add_box(
             f"{prefix}_Chart_{index}",
             (base_x + index * bar_width * 1.75, y - 0.155, z - height * 0.22 + bar_height / 2),
             (bar_width, 0.018, bar_height),
             accent_material,
             bevel=0.02,
-        )
-    add_box(
+        ))
+    overlays.append(add_box(
         f"{prefix}_ChartLine",
         (x + width * 0.22, y - 0.16, z + height * 0.25),
         (width * 0.3, 0.02, 0.05),
         accent_material,
         bevel=0.02,
-    )
+    ))
+    join_mesh_objects(f"{prefix}_Chart", overlays)
 
 
 def add_side_screen(prefix, side_x, center_y, center_z, size, frame_material, screen_material, accent_material, facing_right):
@@ -426,15 +458,17 @@ def add_side_screen(prefix, side_x, center_y, center_z, size, frame_material, sc
     add_box(f"{prefix}_Frame", (side_x, center_y, center_z), (0.18, width + 0.35, height + 0.35), frame_material, bevel=0.1)
     inset_x = side_x + (0.12 if facing_right else -0.12)
     add_box(f"{prefix}_Screen", (inset_x, center_y, center_z), (0.05, width, height), screen_material, bevel=0.04)
+    overlays = []
     for index, ratio in enumerate((0.72, 0.42, 0.58)):
         segment_y = center_y - width * 0.25 + index * width * 0.24
-        add_box(
+        overlays.append(add_box(
             f"{prefix}_Note_{index}",
             (inset_x + (0.03 if facing_right else -0.03), segment_y, center_z + (index - 1) * 0.42),
             (0.025, width * ratio * 0.42, 0.12),
             accent_material,
             bevel=0.02,
-        )
+        ))
+    join_mesh_objects(f"{prefix}_Notes", overlays)
 
 
 def configure_world(background_color, strength):
@@ -656,7 +690,7 @@ def build_meeting(repo_root):
     for label, center, facing, chair_material in chairs:
         add_chair(f"Meeting_Chair_{label}", center, facing, (chair_material, trim), width=0.82, depth=0.8)
 
-    add_back_screen("Meeting_MainDisplay", (1.35, 6.28, 2.52), (5.7, 2.75), trim, screen, aqua)
+    add_back_screen("Meeting_MainDisplay", (1.35, 6.28, 2.52), (5.7, 3.20625), trim, screen, aqua)
     add_side_screen("Meeting_CollaborationWall", -6.84, 0.5, 2.25, (4.6, 2.4), trim, white, aqua, facing_right=True)
     for index in range(7):
         add_box(
@@ -744,7 +778,7 @@ def build_presentation(repo_root):
             stage,
             bevel=0.05,
         )
-    add_back_screen("Presentation_MainScreen", (0.7, 8.78, 3.65), (8.8, 4.35), trim, cream, coral)
+    add_back_screen("Presentation_MainScreen", (0.7, 8.78, 3.65), (7.733333333333333, 4.35), trim, cream, coral)
     add_box("Presentation_ProsceniumTop", (0.0, 8.55, 5.65), (13.4, 0.55, 0.38), coral, bevel=0.12)
     for x in (-6.35, 6.35):
         add_box(f"Presentation_Proscenium_{x}", (x, 8.45, 3.1), (0.48, 0.62, 4.8), coral, bevel=0.12)

@@ -45,7 +45,7 @@ jobs:
               echo "published_scene_version_is_immutable:$path" >&2
               exit 1
             fi
-          done < <(git diff --name-only "$BASE_SHA" HEAD -- assets/scenes)
+          done < <(git diff --no-renames --name-only "$BASE_SHA" HEAD -- assets/scenes)
 
       - name: Read platform validator lock
         id: platform-ref
@@ -75,7 +75,7 @@ jobs:
       - name: Validate release manifest and GLB files
         run: pnpm validate
 
-      - name: Validate current candidate surface and seat contracts
+      - name: Validate candidate and final template contracts
         run: pnpm validate:template-candidates
 
       - name: Inspect GLB files

@@ -2,12 +2,18 @@
 
 Original, versioned scene bundles for Vrata web and XR rooms.
 
-The current release track contains three art-direction candidates. These are
-not active product templates yet:
+The production release track contains three contract-complete scene bundles:
 
-- `personal-workspace-review-v1/0.2.2`
-- `meeting-room-review-v1/0.2.2`
-- `presentation-room-review-v1/0.2.2`
+- `personal-workspace-v1/1.0.0`
+- `meeting-room-v1/1.0.0`
+- `presentation-room-v1/1.0.0`
+
+Their GLB and preview files are byte-identical promotions of the accepted
+`0.2.2` art candidates. The final manifests provide product scene identities,
+seat anchors, and contract-checked surface geometry. Runtime-significant
+manifest values remain equal to the candidates after normalizing identity and
+release-facing descriptions. Product catalog activation is managed separately
+by the platform repository.
 
 The `0.1.x` paths remain immutable blockout history. `0.2.0` adds an original
 embedded PBR material kit, detailed furniture and fixtures, layered ceilings,
@@ -56,5 +62,19 @@ reproduce the release GLBs byte-for-byte:
 RELEASE_VERSION=0.2.2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
 ```
 
+Final `1.0.0` releases must not be generated with `pnpm build:scenes`. They
+promote the accepted candidate GLB and preview without changing either binary.
+Validation also locks each source blend hash and compares normalized candidate
+and final manifests. The source verifier maps the tracked review source IDs to
+the final product IDs:
+
+```bash
+RELEASE_VERSION=1.0.0 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
+```
+
 The Blender source is procedural and uses no external meshes, textures,
 fonts, photographs, or private scene files.
+
+The official origin is `https://github.com/vrata-labs/scene-assets`. Runtime
+URLs must use a full 40-character commit SHA, for example
+`https://cdn.jsdelivr.net/gh/vrata-labs/scene-assets@<commit-sha>/assets/scenes/<scene-id>/<version>/scene.json`.

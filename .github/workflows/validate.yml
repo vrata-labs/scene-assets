@@ -40,7 +40,8 @@ jobs:
           fi
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           while IFS= read -r path; do
-            if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
+            release_dir="$(cut -d/ -f1-4 <<< "$path")"
+            if git cat-file -e "$BASE_SHA:$release_dir" 2>/dev/null; then
               echo "published_scene_version_is_immutable:$path" >&2
               exit 1
             fi
@@ -64,13 +65,18 @@ jobs:
           ref: ${{ steps.platform-ref.outputs.sha }}
           path: .platform
 
-      - name: Build platform scene validator
+      - name: Build platform scene contracts
         run: |
           pnpm --dir .platform install --frozen-lockfile
+          pnpm --dir .platform --filter @vrata/shared-types build
+          pnpm --dir .platform --filter @vrata/templates build
           pnpm --dir .platform --filter @vrata/asset-pipeline build
 
       - name: Validate release manifest and GLB files
         run: pnpm validate
+
+      - name: Validate current candidate surface and seat contracts
+        run: pnpm validate:template-candidates
 
       - name: Inspect GLB files
         run: pnpm inspect

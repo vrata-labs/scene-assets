@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,13 +12,33 @@ const repoRoot = resolve(dirname(scriptPath), "..");
 const maxBundleBytes = 15 * 1024 * 1024;
 const maxPunctualLightIntensity = 10;
 const currentArtCandidateVersion = "0.2.2";
-const maxCurrentArtCandidateMeshes = 100;
+const finalTemplateVersion = "1.0.0";
+const maxOptimizedReleaseMeshes = 100;
 const bundleFileNames = ["LICENSES.md", "preview.webp", "scene.glb", "scene.json"];
-const currentArtCandidateSurfaceAspects = new Map([
-  ["personal-workspace-review-v1", new Map([["debug-main", 2]])],
-  ["meeting-room-review-v1", new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])],
-  ["presentation-room-review-v1", new Map([["debug-main", 16 / 9]])]
-]);
+const finalPromotions = [
+  {
+    sourceSceneId: "personal-workspace-review-v1",
+    finalSceneId: "personal-workspace-v1",
+    sourceSha256: "041cd832447b1cd4a6d26c7d4694f66cfc2e988a3516100201243d19bebcd2b9",
+    surfaceAspects: new Map([["debug-main", 2]])
+  },
+  {
+    sourceSceneId: "meeting-room-review-v1",
+    finalSceneId: "meeting-room-v1",
+    sourceSha256: "760213b87a75f4bb08dbf87abc392ef1c726b060d0b19efad5f3b2f9228e5d52",
+    surfaceAspects: new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
+  },
+  {
+    sourceSceneId: "presentation-room-review-v1",
+    finalSceneId: "presentation-room-v1",
+    sourceSha256: "8753a48345b2d2fe7567328013b8c05addd258b4a0b849d1131adf50015095eb",
+    surfaceAspects: new Map([["debug-main", 16 / 9]])
+  }
+];
+const optimizedReleaseSurfaceAspects = new Map(finalPromotions.flatMap((promotion) => [
+  [`${promotion.sourceSceneId}@${currentArtCandidateVersion}`, promotion.surfaceAspects],
+  [`${promotion.finalSceneId}@${finalTemplateVersion}`, promotion.surfaceAspects]
+]));
 const knownOverbrightReleases = new Set([
   "meeting-room-review-v1@0.2.0",
   "personal-workspace-review-v1@0.2.0",
@@ -26,6 +47,28 @@ const knownOverbrightReleases = new Set([
 
 function assert(condition, code) {
   if (!condition) throw new Error(code);
+}
+
+function normalizePromotedScene(scene) {
+  const normalizeScopedId = (id) => {
+    assert(typeof id === "string" && id.startsWith(`${scene.sceneId}-`), `invalid_scene_scoped_id:${scene.sceneId}:${id}`);
+    return `<scene-id>${id.slice(scene.sceneId.length)}`;
+  };
+  return {
+    ...scene,
+    sceneId: "<scene-id>",
+    label: "<release-label>",
+    anchors: {
+      ...scene.anchors,
+      seatAnchors: (scene.anchors?.seatAnchors ?? []).map((seat) => ({ ...seat, id: normalizeScopedId(seat.id) }))
+    },
+    rights: {
+      ...scene.rights,
+      sourceAssets: (scene.rights?.sourceAssets ?? []).map((asset) => ({ ...asset, id: normalizeScopedId(asset.id) }))
+    },
+    visual: scene.visual ? { ...scene.visual, reviewStage: "<release-stage>" } : scene.visual,
+    notes: "<release-notes>"
+  };
 }
 
 async function releaseDirectories() {
@@ -81,15 +124,17 @@ function parseGlbJson(glb) {
 async function validateRelease(releaseDir, releaseRecord) {
   const scene = JSON.parse(await readFile(join(releaseDir, "scene.json"), "utf8"));
   validateManifestShape(scene, releaseDir);
-  if (basename(releaseDir) === currentArtCandidateVersion) {
-    assert(releaseRecord.stats.meshes <= maxCurrentArtCandidateMeshes, `current_art_candidate_mesh_budget_exceeded:${scene.sceneId}`);
-    for (const [surfaceId, expectedAspect] of currentArtCandidateSurfaceAspects.get(scene.sceneId) ?? []) {
+  const releaseKey = `${scene.sceneId}@${basename(releaseDir)}`;
+  const expectedSurfaceAspects = optimizedReleaseSurfaceAspects.get(releaseKey);
+  if (expectedSurfaceAspects) {
+    assert(releaseRecord.stats.meshes <= maxOptimizedReleaseMeshes, `optimized_release_mesh_budget_exceeded:${releaseKey}`);
+    for (const [surfaceId, expectedAspect] of expectedSurfaceAspects) {
       const surface = scene.mediaSurfaces?.find((candidate) => candidate.surfaceId === surfaceId);
-      assert(surface, `missing_current_art_candidate_surface:${scene.sceneId}:${surfaceId}`);
+      assert(surface, `missing_optimized_release_surface:${releaseKey}:${surfaceId}`);
       const physicalAspect = surface.widthM / surface.heightM;
       const pixelAspect = surface.widthPx / surface.heightPx;
-      assert(Math.abs(physicalAspect - expectedAspect) / expectedAspect <= 0.02, `current_art_candidate_physical_aspect_mismatch:${scene.sceneId}:${surfaceId}`);
-      assert(Math.abs(pixelAspect - expectedAspect) / expectedAspect <= 0.02, `current_art_candidate_pixel_aspect_mismatch:${scene.sceneId}:${surfaceId}`);
+      assert(Math.abs(physicalAspect - expectedAspect) / expectedAspect <= 0.02, `optimized_release_physical_aspect_mismatch:${releaseKey}:${surfaceId}`);
+      assert(Math.abs(pixelAspect - expectedAspect) / expectedAspect <= 0.02, `optimized_release_pixel_aspect_mismatch:${releaseKey}:${surfaceId}`);
     }
   }
   const releaseEntries = await readdir(releaseDir, { withFileTypes: true });
@@ -108,7 +153,6 @@ async function validateRelease(releaseDir, releaseRecord) {
   assert(releaseRecord.stats.textures <= 48, `texture_budget_exceeded:${scene.sceneId}`);
 
   const glb = await readFile(join(releaseDir, scene.glbPath));
-  const releaseKey = `${scene.sceneId}@${basename(releaseDir)}`;
   if (!knownOverbrightReleases.has(releaseKey)) {
     const gltf = parseGlbJson(glb);
     for (const light of gltf.extensions?.KHR_lights_punctual?.lights ?? []) {
@@ -147,6 +191,26 @@ const releaseKeys = new Set(generatedManifest.releases.map((release) => `${relea
 assert(releaseKeys.size === generatedManifest.releases.length, "duplicate_scene_release");
 for (const sceneId of ["personal-workspace-review-v1", "meeting-room-review-v1", "presentation-room-review-v1"]) {
   assert(releaseKeys.has(`${sceneId}@${currentArtCandidateVersion}`), `missing_current_art_candidate:${sceneId}`);
+}
+for (const promotion of finalPromotions) {
+  assert(releaseKeys.has(`${promotion.finalSceneId}@${finalTemplateVersion}`), `missing_final_template_release:${promotion.finalSceneId}`);
+  const [sourceSceneFile, finalSceneFile, sourceBlend] = await Promise.all([
+    readFile(join(repoRoot, "assets/scenes", promotion.sourceSceneId, currentArtCandidateVersion, "scene.json"), "utf8"),
+    readFile(join(repoRoot, "assets/scenes", promotion.finalSceneId, finalTemplateVersion, "scene.json"), "utf8"),
+    readFile(join(repoRoot, "sources", promotion.sourceSceneId, "source.blend"))
+  ]);
+  const sourceScene = normalizePromotedScene(JSON.parse(sourceSceneFile));
+  const finalScene = normalizePromotedScene(JSON.parse(finalSceneFile));
+  assert(JSON.stringify(sourceScene) === JSON.stringify(finalScene), `final_promotion_manifest_mismatch:${promotion.finalSceneId}`);
+  const sourceSha256 = createHash("sha256").update(sourceBlend).digest("hex");
+  assert(sourceSha256 === promotion.sourceSha256, `tracked_source_hash_mismatch:${promotion.sourceSceneId}`);
+  for (const fileName of ["scene.glb", "preview.webp"]) {
+    const [sourceFile, finalFile] = await Promise.all([
+      readFile(join(repoRoot, "assets/scenes", promotion.sourceSceneId, currentArtCandidateVersion, fileName)),
+      readFile(join(repoRoot, "assets/scenes", promotion.finalSceneId, finalTemplateVersion, fileName))
+    ]);
+    assert(sourceFile.equals(finalFile), `final_promotion_asset_mismatch:${promotion.finalSceneId}:${fileName}`);
+  }
 }
 for (let index = 0; index < releaseDirs.length; index += 1) {
   await validateRelease(releaseDirs[index], generatedManifest.releases[index]);

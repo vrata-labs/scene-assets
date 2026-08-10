@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "personal-workspace-v1",
+  "label": "Personal Workspace",
+  "source": "Vrata original procedural Blender art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 4.45
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "personal-workspace-v1-desk-chair",
+        "position": {
+          "x": -0.55,
+          "y": 0.48,
+          "z": -1.55
+        },
+        "yaw": 0,
+        "seatHeight": 0.06,
+        "radius": 0.54,
+        "label": "Workspace chair"
+      },
+      {
+        "id": "personal-workspace-v1-reading-chair",
+        "position": {
+          "x": 3.05,
+          "y": 0.48,
+          "z": 0.65
+        },
+        "yaw": 0.849,
+        "seatHeight": 0.06,
+        "radius": 0.58,
+        "label": "Reading chair"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Owner workspace",
+      "kind": "wall",
+      "widthM": 4.9,
+      "heightM": 2.45,
+      "widthPx": 1920,
+      "heightPx": 960,
+      "transform": {
+        "x": 0.55,
+        "y": 2.35,
+        "z": -5.09,
+        "yaw": 0
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 10,
+    "height": 4.2,
+    "depth": 11
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "personal-workspace-v1-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "production"
+  },
+  "notes": "Production release: focused desk, owner workspace, reading corner, original embedded PBR material kit, runtime-calibrated layered lighting, contract-aligned media clearance, and two usable seats."
+}

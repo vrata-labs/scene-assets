@@ -40,6 +40,10 @@ const optimizedReleaseSurfaceAspects = new Map(finalPromotions.flatMap((promotio
   [`${promotion.finalSceneId}@${finalTemplateVersion}`, promotion.surfaceAspects]
 ]));
 optimizedReleaseSurfaceAspects.set(
+  "personal-workspace-review-v2@0.3.0",
+  new Map([["debug-main", 2]])
+);
+optimizedReleaseSurfaceAspects.set(
   "meeting-room-review-v2@0.3.0",
   new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
 );
@@ -48,6 +52,10 @@ optimizedReleaseSurfaceAspects.set(
   new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
 );
 const trackedReviewSources = [
+  {
+    sceneId: "personal-workspace-review-v2",
+    sha256: "e79b442100a6d771ebb50da66eff8e26801ce41a55ada82a78b9898373477245"
+  },
   {
     sceneId: "meeting-room-review-v2",
     sha256: "1ac997ac287855ea0d066497880af48b1b45e6ad052e056710e2d233207de015"

@@ -20,7 +20,11 @@ def parse_args():
     parser.add_argument("--repo-root", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output-root", required=True)
-    parser.add_argument("--scene-id", action="append", choices=SCENE_IDS + ("meeting-room-review-v2",))
+    parser.add_argument(
+        "--scene-id",
+        action="append",
+        choices=SCENE_IDS + ("personal-workspace-review-v2", "meeting-room-review-v2"),
+    )
     return parser.parse_args(argv)
 
 

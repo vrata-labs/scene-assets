@@ -420,6 +420,38 @@
       }
     },
     {
+      "sceneId": "personal-workspace-review-v2",
+      "version": "0.3.0",
+      "releasePath": "assets/scenes/personal-workspace-review-v2/0.3.0",
+      "files": {
+        "scene.json": {
+          "sha256": "f2cb3b7d5a72c4bd337a78a3f1c79da59681839317ddc5e88fd0f708371da044",
+          "sizeBytes": 2263
+        },
+        "scene.glb": {
+          "sha256": "0fc40df63e80f02bf0915558994958c950f6ed950124c7960e12d729de81276e",
+          "sizeBytes": 4651492
+        },
+        "preview.webp": {
+          "sha256": "dabcbabbe3d49a732890c29844030cf04862de76856c020e717625be10f5f1e4",
+          "sizeBytes": 83454
+        },
+        "LICENSES.md": {
+          "sha256": "d5606d50f867d7902c3752cc642224592d5d56ab5d7569019d13928edea86d9e",
+          "sizeBytes": 709
+        }
+      },
+      "stats": {
+        "triangles": 51456,
+        "nodes": 63,
+        "meshes": 52,
+        "primitives": 87,
+        "materials": 20,
+        "textures": 20,
+        "animations": 0
+      }
+    },
+    {
       "sceneId": "personal-workspace-v1",
       "version": "1.0.0",
       "releasePath": "assets/scenes/personal-workspace-v1/1.0.0",

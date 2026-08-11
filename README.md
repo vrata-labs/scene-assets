@@ -84,8 +84,8 @@ fonts, photographs, or private scene files.
 The meeting replacement candidate can be rebuilt and verified independently:
 
 ```bash
-RELEASE_VERSION=0.3.0 BUILD_SCENE=meeting-v2 BLENDER_BIN=/path/to/blender pnpm build:scenes
-RELEASE_VERSION=0.3.0 SOURCE_SCENE_IDS=meeting-room-review-v2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
+RELEASE_VERSION=0.3.1 BUILD_SCENE=meeting-v2 BLENDER_BIN=/path/to/blender pnpm build:scenes
+RELEASE_VERSION=0.3.1 SOURCE_SCENE_IDS=meeting-room-review-v2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
 ```
 
 The official origin is `https://github.com/vrata-labs/scene-assets`. Runtime

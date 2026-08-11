@@ -587,12 +587,26 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
         raise RuntimeError(f"published_scene_version_is_immutable:{scene_id}@{RELEASE_VERSION}")
     release_dir.mkdir(parents=True, exist_ok=True)
     source_dir.mkdir(parents=True, exist_ok=True)
-    base_release_dir = repo_root / "assets" / "scenes" / scene_id / "0.1.0"
-    if release_dir != base_release_dir:
-        for static_name in ("scene.json", "LICENSES.md"):
-            target_path = release_dir / static_name
-            if not target_path.exists():
-                shutil.copyfile(base_release_dir / static_name, target_path)
+    scene_root = repo_root / "assets" / "scenes" / scene_id
+    previous_release_dirs = sorted(
+        (
+            candidate
+            for candidate in scene_root.iterdir()
+            if candidate.is_dir()
+            and candidate != release_dir
+            and (candidate / "scene.json").exists()
+            and re.fullmatch(r"\d+\.\d+\.\d+", candidate.name)
+        ),
+        key=lambda candidate: tuple(int(part) for part in candidate.name.split(".")),
+        reverse=True,
+    )
+    for static_name in ("scene.json", "LICENSES.md"):
+        target_path = release_dir / static_name
+        if target_path.exists():
+            continue
+        if not previous_release_dirs:
+            raise RuntimeError(f"missing_release_metadata:{scene_id}@{RELEASE_VERSION}:{static_name}")
+        shutil.copyfile(previous_release_dirs[0] / static_name, target_path)
 
     camera_data = bpy.data.cameras.new("Review Camera")
     camera = bpy.data.objects.new("Review Camera", camera_data)
@@ -857,8 +871,8 @@ def build_meeting_v2(repo_root):
     brass = make_material("Meeting V2 Aged Brass", "#A98A58", 0.35, metallic=0.74)
     screen = make_material("Meeting V2 Display", "#E7E2D6", 0.38, emission="#D8E6E2", emission_strength=0.2, coat_weight=0.22, coat_roughness=0.2)
     whiteboard = make_material("Meeting V2 Collaboration Surface", "#E4E0D6", 0.4, coat_weight=0.2, coat_roughness=0.18)
-    warm_light = make_material("Meeting V2 Warm Light", "#FFF0CF", 0.28, emission="#FFF0CF", emission_strength=2.2)
-    cool_light = make_material("Meeting V2 Cool Light", "#B9DEDB", 0.3, emission="#B9DEDB", emission_strength=1.5)
+    warm_light = make_material("Meeting V2 Warm Light", "#C5A26C", 0.32, emission="#E8C78E", emission_strength=0.58)
+    cool_light = make_material("Meeting V2 Cool Light", "#739C9B", 0.34, emission="#A9CECB", emission_strength=0.42)
     glass = make_material("Meeting V2 Tinted Glass", "#6B8587", 0.2, metallic=0.08, coat_weight=0.5, coat_roughness=0.08, alpha=0.28)
     city_dark = make_material("Meeting V2 Exterior", "#162329", 0.8, emission="#162329", emission_strength=0.16)
     city_light = make_material("Meeting V2 Exterior Light", "#D8B879", 0.4, emission="#D8B879", emission_strength=1.4)
@@ -1019,9 +1033,9 @@ def build_meeting_v2(repo_root):
     add_area_light("MeetingV2_WindowFill", (5.7, 0.2, 3.1), (0.0, 0.6, 1.1), 1150, "#B8D7D4", 4.2)
     add_area_light("MeetingV2_DisplayFill", (1.45, 5.25, 3.6), (0.0, 1.0, 1.2), 850, "#D7E9E4", 3.0)
     for index, (x, y, light_color) in enumerate(((-2.5, -1.5, "#FFE3B8"), (0.0, 0.2, "#D4ECE8"), (2.6, -1.2, "#FFE3B8"), (0.6, 2.2, "#D4ECE8"))):
-        add_point_light(f"MeetingV2_RuntimeCeiling_{index}", (x, y, 4.08), 95, light_color, radius=0.45, cutoff=7.5)
-    add_spot_light("MeetingV2_RuntimeDisplay", (1.45, 4.75, 4.2), (1.45, 5.9, 2.15), 125, "#D4E9E4", cutoff=6.5)
-    add_point_light("MeetingV2_RuntimeCredenza", (5.35, 4.8, 1.75), 72, "#FFD6A2", radius=0.3, cutoff=4.2)
+        add_point_light(f"MeetingV2_RuntimeCeiling_{index}", (x, y, 4.08), 28, light_color, radius=0.55, cutoff=7.5)
+    add_spot_light("MeetingV2_RuntimeDisplay", (1.45, 4.75, 4.2), (1.45, 5.9, 2.15), 38, "#D4E9E4", cutoff=6.5)
+    add_point_light("MeetingV2_RuntimeCredenza", (5.35, 4.8, 1.75), 24, "#FFD6A2", radius=0.38, cutoff=4.2)
 
     render_and_export(repo_root, "meeting-room-review-v2", (-3.35, -5.05, 1.78), (0.35, 1.45, 1.68), lens=27.0)
 

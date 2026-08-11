@@ -43,10 +43,14 @@ optimizedReleaseSurfaceAspects.set(
   "meeting-room-review-v2@0.3.0",
   new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
 );
+optimizedReleaseSurfaceAspects.set(
+  "meeting-room-review-v2@0.3.1",
+  new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
+);
 const trackedReviewSources = [
   {
     sceneId: "meeting-room-review-v2",
-    sha256: "d150bef942b9f7ee91a5b582008111a151da2b315a49a1db367ad67295e7ca93"
+    sha256: "1ac997ac287855ea0d066497880af48b1b45e6ad052e056710e2d233207de015"
   }
 ];
 const knownOverbrightReleases = new Set([

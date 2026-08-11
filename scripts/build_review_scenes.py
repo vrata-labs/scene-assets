@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--scene",
         action="append",
-        choices=("personal", "personal-v2", "meeting", "presentation", "meeting-v2"),
+        choices=("personal", "personal-v2", "meeting", "presentation", "presentation-v2", "meeting-v2"),
         help="Build only the selected scene. Repeat to build multiple scenes.",
     )
     return parser.parse_args(argv)
@@ -341,27 +341,27 @@ def add_capsule_table(prefix, center, length, width, height, top_material, edge_
     return top, edge, left_base, right_base
 
 
-def add_modern_chair(prefix, center, facing, upholstery, frame_material, accent_material):
+def add_modern_chair(prefix, center, facing, upholstery, frame_material, accent_material, elevation=0.0):
     forward = Vector((facing[0], facing[1]))
     forward.normalize()
     right = Vector((forward.y, -forward.x))
     rotation = math.atan2(-forward.x, forward.y)
     x, y = center
     parts = [
-        add_box(f"{prefix}_SeatShell", (x, y, 0.48), (0.82, 0.76, 0.13), frame_material, bevel=0.055, rotation=rotation),
-        add_box(f"{prefix}_SeatCushion", (x, y, 0.57), (0.73, 0.67, 0.12), upholstery, bevel=0.065, rotation=rotation),
+        add_box(f"{prefix}_SeatShell", (x, y, elevation + 0.48), (0.82, 0.76, 0.13), frame_material, bevel=0.055, rotation=rotation),
+        add_box(f"{prefix}_SeatCushion", (x, y, elevation + 0.57), (0.73, 0.67, 0.12), upholstery, bevel=0.065, rotation=rotation),
     ]
     back_xy = Vector((x, y)) - forward * 0.37
     parts.extend([
-        add_box(f"{prefix}_BackShell", (back_xy.x, back_xy.y, 1.02), (0.83, 0.13, 0.9), frame_material, bevel=0.07, rotation=rotation),
-        add_box(f"{prefix}_BackCushion", (back_xy.x, back_xy.y, 1.03), (0.72, 0.09, 0.69), upholstery, bevel=0.065, rotation=rotation),
-        add_box(f"{prefix}_BackAccent", (back_xy.x, back_xy.y, 1.39), (0.56, 0.15, 0.055), accent_material, bevel=0.02, rotation=rotation),
+        add_box(f"{prefix}_BackShell", (back_xy.x, back_xy.y, elevation + 1.02), (0.83, 0.13, 0.9), frame_material, bevel=0.07, rotation=rotation),
+        add_box(f"{prefix}_BackCushion", (back_xy.x, back_xy.y, elevation + 1.03), (0.72, 0.09, 0.69), upholstery, bevel=0.065, rotation=rotation),
+        add_box(f"{prefix}_BackAccent", (back_xy.x, back_xy.y, elevation + 1.39), (0.56, 0.15, 0.055), accent_material, bevel=0.02, rotation=rotation),
     ])
     for side in (-1.0, 1.0):
         side_xy = Vector((x, y)) + right * (side * 0.32)
         parts.append(add_box(
             f"{prefix}_Leg_{side}",
-            (side_xy.x, side_xy.y, 0.25),
+            (side_xy.x, side_xy.y, elevation + 0.25),
             (0.055, 0.62, 0.5),
             frame_material,
             bevel=0.018,
@@ -1341,6 +1341,192 @@ def build_presentation(repo_root):
     render_and_export(repo_root, "presentation-room-review-v1", (0.0, -7.4, 1.72), (0.25, 5.7, 2.25), lens=27.0)
 
 
+def build_presentation_v2(repo_root):
+    reset_scene()
+    limestone = make_material("Presentation V2 Limestone", "#B6AA98", 0.87, pattern="stone")
+    plaster = make_material("Presentation V2 Warm Plaster", "#D5CEC1", 0.92, pattern="plaster")
+    charcoal = make_material("Presentation V2 Charcoal", "#171B1D", 0.57, metallic=0.12)
+    graphite = make_material("Presentation V2 Graphite", "#293033", 0.48, metallic=0.3)
+    carpet = make_material("Presentation V2 Auditorium Carpet", "#353D3E", 0.97, pattern="carpet", sheen_weight=0.06)
+    walnut = make_material("Presentation V2 Walnut", "#5F402D", 0.62, pattern="wood", coat_weight=0.16, coat_roughness=0.31)
+    oak = make_material("Presentation V2 Natural Oak", "#A37855", 0.64, pattern="wood", coat_weight=0.14, coat_roughness=0.34)
+    sage = make_material("Presentation V2 Sage Textile", "#63766D", 0.87, pattern="textile", sheen_weight=0.18)
+    clay = make_material("Presentation V2 Clay Textile", "#955C48", 0.87, pattern="textile", sheen_weight=0.16)
+    sand = make_material("Presentation V2 Sand Textile", "#B4A289", 0.88, pattern="textile", sheen_weight=0.16)
+    brass = make_material("Presentation V2 Aged Brass", "#A98A58", 0.34, metallic=0.76)
+    screen = make_material("Presentation V2 Main Display", "#E5E1D7", 0.38, emission="#D9E4E0", emission_strength=0.2, coat_weight=0.22, coat_roughness=0.2)
+    warm_light = make_material("Presentation V2 Warm Light", "#C7A26B", 0.34, emission="#EBC98E", emission_strength=0.6)
+    cool_light = make_material("Presentation V2 Cool Light", "#789B9B", 0.36, emission="#B1CFCD", emission_strength=0.4)
+    burgundy = make_material("Presentation V2 Burgundy Acoustic", "#603A42", 0.9, pattern="textile", sheen_weight=0.12)
+
+    add_box("PresentationV2_Floor", (0.0, 0.0, -0.1), (16.2, 18.4, 0.2), carpet, bevel=0.02)
+    add_box("PresentationV2_BackWall", (0.0, 9.1, 3.2), (16.2, 0.2, 6.4), plaster, bevel=0.025)
+    add_box("PresentationV2_LeftWall", (-8.0, 0.0, 3.2), (0.2, 18.4, 6.4), charcoal, bevel=0.025)
+    add_box("PresentationV2_RightWall", (8.0, 0.0, 3.2), (0.2, 18.4, 6.4), charcoal, bevel=0.025)
+    add_box("PresentationV2_Ceiling", (0.0, 0.0, 6.34), (16.2, 18.4, 0.12), charcoal, bevel=0.025)
+    add_box("PresentationV2_FrontLintel", (0.0, -9.08, 5.65), (16.2, 0.22, 1.5), limestone, bevel=0.055)
+    for x in (-7.2, 7.2):
+        add_box(f"PresentationV2_FrontPier_{x}", (x, -9.08, 2.65), (1.55, 0.22, 5.3), limestone, bevel=0.055)
+
+    add_box("PresentationV2_CeilingInset", (0.0, 0.0, 6.24), (14.55, 16.7, 0.08), plaster, bevel=0.18)
+    add_box("PresentationV2_CeilingRecess", (0.0, 0.55, 6.14), (11.6, 14.25, 0.12), charcoal, bevel=0.24)
+    ceiling_ribs = []
+    for index, y in enumerate((-6.2, -3.15, -0.1, 2.95, 6.0)):
+        ceiling_ribs.extend([
+            add_box(f"PresentationV2_CeilingRib_{index}", (0.0, y, 6.02), (12.7, 0.24, 0.18), walnut if index % 2 else oak, bevel=0.07),
+            add_box(f"PresentationV2_CeilingRibLight_{index}", (0.0, y - 0.15, 5.92), (10.8, 0.055, 0.055), warm_light if index > 2 else cool_light, bevel=0.018),
+        ])
+    join_mesh_objects("PresentationV2_CeilingRhythm", ceiling_ribs)
+    add_curve_tube(
+        "PresentationV2_CeilingRibbonLeft",
+        [(-5.4, -7.2, 5.86), (-4.25, -4.5, 5.78), (-5.0, -1.4, 5.84), (-4.1, 1.7, 5.77), (-4.75, 4.6, 5.84), (-3.85, 7.0, 5.78)],
+        0.055,
+        warm_light,
+    )
+    add_curve_tube(
+        "PresentationV2_CeilingRibbonRight",
+        [(5.35, -7.2, 5.86), (4.15, -4.4, 5.78), (4.95, -1.3, 5.84), (4.0, 1.8, 5.77), (4.7, 4.7, 5.84), (3.8, 7.0, 5.78)],
+        0.055,
+        cool_light,
+    )
+
+    for label, center_y, top_height, depth in (("Rear", -5.15, 0.6, 2.65), ("Middle", -2.15, 0.36, 2.55), ("Front", 0.78, 0.16, 2.45)):
+        add_box(f"PresentationV2_{label}Tier", (0.0, center_y, top_height / 2), (13.25, depth, top_height), carpet, bevel=0.08)
+        add_box(f"PresentationV2_{label}TierEdge", (0.0, center_y + depth / 2 - 0.04, top_height * 0.55), (13.1, 0.09, top_height + 0.08), brass, bevel=0.022)
+    aisle_parts = [
+        add_box("PresentationV2_AisleRear", (0.0, -5.15, 0.625), (1.55, 2.65, 0.05), limestone, bevel=0.055),
+        add_box("PresentationV2_AisleMiddle", (0.0, -2.15, 0.385), (1.55, 2.55, 0.05), limestone, bevel=0.055),
+        add_box("PresentationV2_AisleFront", (0.0, 0.78, 0.185), (1.55, 2.45, 0.05), limestone, bevel=0.055),
+        add_box("PresentationV2_AisleApproach", (0.0, 2.85, 0.03), (1.55, 1.9, 0.06), limestone, bevel=0.055),
+    ]
+    for z, y in ((0.47, -3.8), (0.25, -0.78), (0.08, 2.05)):
+        aisle_parts.append(add_box(f"PresentationV2_AisleStep_{y}", (0.0, y, z), (1.55, 0.5, 0.16), limestone, bevel=0.035))
+    join_mesh_objects("PresentationV2_CenterAisle", aisle_parts)
+    for x in (-0.7, 0.7):
+        add_curve_tube(
+            f"PresentationV2_AisleLight_{x}",
+            [(x, -6.45, 0.66), (x, -3.8, 0.45), (x, -0.8, 0.24), (x, 2.7, 0.08), (x, 4.4, 0.08)],
+            0.025,
+            warm_light,
+        )
+
+    side_reliefs = {"Left": [], "Right": []}
+    for side_name, side_x, inset_sign in (("Left", -7.88, 1.0), ("Right", 7.88, -1.0)):
+        for index, y in enumerate((-6.8, -4.25, -1.7, 0.85, 3.4, 5.95)):
+            side_reliefs[side_name].extend([
+                add_box(
+                    f"PresentationV2_{side_name}Relief_{index}",
+                    (side_x + inset_sign * (0.04 + (index % 2) * 0.05), y, 3.05),
+                    (0.16, 1.55, 4.35 - (index % 3) * 0.34),
+                    walnut if index % 2 else oak,
+                    bevel=0.07,
+                ),
+                add_box(
+                    f"PresentationV2_{side_name}Acoustic_{index}",
+                    (side_x + inset_sign * 0.14, y + 0.05, 3.0),
+                    (0.08, 1.05, 3.45 - (index % 2) * 0.28),
+                    burgundy if index % 2 else sage,
+                    bevel=0.08,
+                ),
+            ])
+        join_mesh_objects(f"PresentationV2_{side_name}WallRhythm", side_reliefs[side_name])
+        for index, y in enumerate((-5.55, -0.45, 4.65)):
+            add_box(f"PresentationV2_{side_name}SconceBack_{index}", (side_x + inset_sign * 0.2, y, 2.75), (0.08, 0.5, 0.9), brass, bevel=0.065)
+            add_sphere(f"PresentationV2_{side_name}Sconce_{index}", (side_x + inset_sign * 0.29, y, 2.75), (0.1, 0.2, 0.3), warm_light)
+
+    add_box("PresentationV2_Stage", (0.0, 6.85, 0.34), (14.2, 4.45, 0.68), oak, bevel=0.11)
+    add_box("PresentationV2_StageApron", (0.0, 4.65, 0.39), (13.85, 0.18, 0.58), walnut, bevel=0.055)
+    add_box("PresentationV2_StageLight", (0.0, 4.53, 0.7), (12.8, 0.055, 0.065), warm_light, bevel=0.018)
+    stage_steps = []
+    for index in range(3):
+        stage_steps.append(add_box(
+            f"PresentationV2_StageStep_{index}",
+            (0.0, 4.35 - index * 0.34, 0.09 + index * 0.11),
+            (4.8 - index * 0.35, 0.42, 0.18 + index * 0.2),
+            limestone,
+            bevel=0.055,
+        ))
+    join_mesh_objects("PresentationV2_StageSteps", stage_steps)
+
+    add_box("PresentationV2_ProsceniumInset", (0.0, 8.94, 3.52), (14.35, 0.22, 5.65), charcoal, bevel=0.15)
+    add_box("PresentationV2_ProsceniumTop", (0.0, 8.72, 5.95), (14.6, 0.58, 0.46), limestone, bevel=0.13)
+    for x in (-6.75, 6.75):
+        add_box(f"PresentationV2_ProsceniumPier_{x}", (x, 8.72, 3.35), (0.62, 0.6, 5.35), limestone, bevel=0.13)
+    proscenium_fins = []
+    for index in range(7):
+        proscenium_fins.append(add_box(
+            f"PresentationV2_ProsceniumFin_{index}",
+            (-6.1 + index * 0.34, 8.47 - (index % 2) * 0.045, 3.45),
+            (0.16, 0.22, 4.55 - (index % 3) * 0.35),
+            walnut if index % 2 else oak,
+            bevel=0.04,
+        ))
+    join_mesh_objects("PresentationV2_ProsceniumFins", proscenium_fins)
+    add_curve_tube(
+        "PresentationV2_ProsceniumArc",
+        [(-6.2, 8.36, 1.0), (-6.2, 8.36, 4.85), (-5.3, 8.36, 5.6), (-3.85, 8.36, 5.82), (-2.4, 8.36, 5.62)],
+        0.075,
+        brass,
+    )
+    add_display_panel("PresentationV2_MainDisplay", (1.2, 8.65, 3.55), (8.0, 4.5), graphite, screen)
+
+    podium_parts = [
+        add_box("PresentationV2_PodiumBase", (-4.85, 6.25, 0.88), (1.15, 0.8, 1.45), charcoal, bevel=0.09),
+        add_box("PresentationV2_PodiumFront", (-4.85, 5.81, 1.0), (0.82, 0.08, 1.05), walnut, bevel=0.07),
+        add_box("PresentationV2_PodiumTop", (-4.85, 6.08, 1.66), (1.38, 0.92, 0.12), limestone, bevel=0.055),
+        add_box("PresentationV2_PodiumDisplay", (-4.85, 5.75, 1.1), (0.5, 0.035, 0.38), screen, bevel=0.035),
+        add_box("PresentationV2_PodiumAccent", (-4.85, 5.68, 0.61), (0.42, 0.035, 0.055), warm_light, bevel=0.014),
+        add_cylinder("PresentationV2_PodiumMicStem", (-4.42, 6.05, 1.95), 0.024, 0.56, brass, vertices=14, bevel=0.006),
+        add_sphere("PresentationV2_PodiumMic", (-4.42, 6.05, 2.22), (0.065, 0.065, 0.09), charcoal),
+    ]
+    join_mesh_objects("PresentationV2_Podium", podium_parts)
+    add_box("PresentationV2_StageBench", (4.75, 7.0, 0.82), (2.45, 0.82, 0.24), sand, bevel=0.1)
+    add_box("PresentationV2_StageBenchBase", (4.75, 7.0, 0.47), (2.2, 0.64, 0.65), walnut, bevel=0.08)
+
+    rows = [
+        ("Rear", -5.0, 0.6, (clay, sage, sage, clay)),
+        ("Middle", -2.0, 0.36, (sage, sand, sand, sage)),
+        ("Front", 0.95, 0.16, (sand, clay, clay, sand)),
+    ]
+    seat_xs = (-5.15, -2.45, 2.45, 5.15)
+    for row_name, row_y, elevation, upholstery_set in rows:
+        for seat_index, (x, upholstery) in enumerate(zip(seat_xs, upholstery_set), start=1):
+            add_modern_chair(
+                f"PresentationV2_Seat_{row_name}_{seat_index}",
+                (x, row_y),
+                (0.0, 1.0),
+                upholstery,
+                charcoal,
+                brass,
+                elevation=elevation,
+            )
+
+    for side_name, x in (("Left", -6.9), ("Right", 6.9)):
+        add_box(f"PresentationV2_Exit_{side_name}", (x, -7.72, 1.88), (1.45, 0.16, 3.55), graphite, bevel=0.08)
+        add_box(f"PresentationV2_ExitFrame_{side_name}", (x, -7.62, 1.9), (1.72, 0.12, 3.82), brass, bevel=0.075)
+        add_box(f"PresentationV2_ExitHandle_{side_name}", (x + (-0.42 if x < 0 else 0.42), -7.5, 1.65), (0.06, 0.06, 0.62), brass, bevel=0.018)
+
+    configure_world("#3D4346", 0.4)
+    add_area_light("PresentationV2_StageKey", (0.0, 4.1, 5.75), (0.4, 6.5, 1.0), 2150, "#F5D3A5", 5.5)
+    add_area_light("PresentationV2_AudienceFill", (0.0, -5.6, 5.25), (0.0, -0.5, 0.8), 1250, "#B5CDCF", 6.0)
+    add_area_light("PresentationV2_ScreenFill", (1.2, 7.65, 4.85), (0.8, 4.5, 1.4), 950, "#D6E7E2", 4.0)
+    for index, x in enumerate((-4.8, -1.6, 1.6, 4.8)):
+        add_spot_light(
+            f"PresentationV2_RuntimeStageSpot_{index}",
+            (x, 4.15, 5.7),
+            (x * 0.55, 6.65, 0.75),
+            44,
+            "#FFD8A5",
+            size=math.radians(48),
+            cutoff=10.5,
+        )
+    for index, (x, y) in enumerate(((-5.8, -4.8), (5.8, -4.8), (-5.8, 0.2), (5.8, 0.2))):
+        add_point_light(f"PresentationV2_RuntimeAudience_{index}", (x, y, 3.55), 26, "#C5DCDD", radius=0.48, cutoff=7.2)
+    add_point_light("PresentationV2_RuntimePodium", (-4.7, 5.7, 2.7), 24, "#FFD6A2", radius=0.38, cutoff=4.5)
+
+    render_and_export(repo_root, "presentation-room-review-v2", (0.0, -7.65, 2.2), (0.35, 6.1, 2.35), lens=27.0)
+
+
 def main():
     global RELEASE_VERSION, SKIP_RENDER
     if bpy.app.version[:3] != BLENDER_VERSION:
@@ -1356,6 +1542,7 @@ def main():
         "personal-v2": build_personal_v2,
         "meeting": build_meeting,
         "presentation": build_presentation,
+        "presentation-v2": build_presentation_v2,
         "meeting-v2": build_meeting_v2,
     }
     selected_scenes = args.scene or ("personal", "meeting", "presentation")

@@ -40,6 +40,12 @@ const releases = [
     sceneVersion: "0.2.2",
     expectedErrorCodes: ["template_scene_id_mismatch", "template_scene_version_mismatch"]
   },
+  {
+    templateId: "presentation-room-basic",
+    sceneId: "presentation-room-review-v2",
+    sceneVersion: "0.3.0",
+    expectedErrorCodes: ["template_scene_id_mismatch", "template_scene_version_mismatch"]
+  },
   { templateId: "personal-room-basic", sceneId: "personal-workspace-v1", sceneVersion: "1.0.0", expectedErrorCodes: [] },
   { templateId: "meeting-room-basic", sceneId: "meeting-room-v1", sceneVersion: "1.0.0", expectedErrorCodes: [] },
   { templateId: "presentation-room-basic", sceneId: "presentation-room-v1", sceneVersion: "1.0.0", expectedErrorCodes: [] }

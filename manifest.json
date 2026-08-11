@@ -644,6 +644,38 @@
       }
     },
     {
+      "sceneId": "presentation-room-review-v2",
+      "version": "0.3.0",
+      "releasePath": "assets/scenes/presentation-room-review-v2/0.3.0",
+      "files": {
+        "scene.json": {
+          "sha256": "186ee83ac34afe24e873b62375cd111181b20481b7d5a894f7eb65d0a63e0851",
+          "sizeBytes": 4662
+        },
+        "scene.glb": {
+          "sha256": "7cf5504dcf70b78b6056f581ad2edde9338664a4764719921a9a1e021d3ab9e6",
+          "sizeBytes": 4476828
+        },
+        "preview.webp": {
+          "sha256": "4109b57992879ed1a4ed9f9fa8c531cfc6da64fd2a5771abd9493e3f3404a57e",
+          "sizeBytes": 63746
+        },
+        "LICENSES.md": {
+          "sha256": "a6af28e6a3e8125d063cf2ff5f5e3374c9f96b5df9646edeb0c280bb0026ef7c",
+          "sizeBytes": 731
+        }
+      },
+      "stats": {
+        "triangles": 41912,
+        "nodes": 80,
+        "meshes": 68,
+        "primitives": 108,
+        "materials": 15,
+        "textures": 18,
+        "animations": 0
+      }
+    },
+    {
       "sceneId": "presentation-room-v1",
       "version": "1.0.0",
       "releasePath": "assets/scenes/presentation-room-v1/1.0.0",

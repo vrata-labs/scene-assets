@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "presentation-room-review-v2",
+  "label": "Presentation Room Architectural Candidate",
+  "source": "Vrata original procedural Blender architectural art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": 0,
+        "y": 0.6,
+        "z": 7.65
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "presentation-room-review-v2-rear-left-outer",
+        "position": { "x": -5.15, "y": 1.08, "z": 5 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Rear row left outer"
+      },
+      {
+        "id": "presentation-room-review-v2-rear-left-inner",
+        "position": { "x": -2.45, "y": 1.08, "z": 5 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Rear row left inner"
+      },
+      {
+        "id": "presentation-room-review-v2-rear-right-inner",
+        "position": { "x": 2.45, "y": 1.08, "z": 5 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Rear row right inner"
+      },
+      {
+        "id": "presentation-room-review-v2-rear-right-outer",
+        "position": { "x": 5.15, "y": 1.08, "z": 5 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Rear row right outer"
+      },
+      {
+        "id": "presentation-room-review-v2-middle-left-outer",
+        "position": { "x": -5.15, "y": 0.84, "z": 2 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Middle row left outer"
+      },
+      {
+        "id": "presentation-room-review-v2-middle-left-inner",
+        "position": { "x": -2.45, "y": 0.84, "z": 2 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Middle row left inner"
+      },
+      {
+        "id": "presentation-room-review-v2-middle-right-inner",
+        "position": { "x": 2.45, "y": 0.84, "z": 2 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Middle row right inner"
+      },
+      {
+        "id": "presentation-room-review-v2-middle-right-outer",
+        "position": { "x": 5.15, "y": 0.84, "z": 2 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Middle row right outer"
+      },
+      {
+        "id": "presentation-room-review-v2-front-left-outer",
+        "position": { "x": -5.15, "y": 0.64, "z": -0.95 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front row left outer"
+      },
+      {
+        "id": "presentation-room-review-v2-front-left-inner",
+        "position": { "x": -2.45, "y": 0.64, "z": -0.95 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front row left inner"
+      },
+      {
+        "id": "presentation-room-review-v2-front-right-inner",
+        "position": { "x": 2.45, "y": 0.64, "z": -0.95 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front row right inner"
+      },
+      {
+        "id": "presentation-room-review-v2-front-right-outer",
+        "position": { "x": 5.15, "y": 0.64, "z": -0.95 },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front row right outer"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Presentation screen",
+      "kind": "wall",
+      "widthM": 8,
+      "heightM": 4.5,
+      "widthPx": 1920,
+      "heightPx": 1080,
+      "transform": {
+        "x": 1.2,
+        "y": 3.55,
+        "z": -8.53,
+        "yaw": 0
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 16.2,
+    "height": 6.4,
+    "depth": 18.4
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "presentation-room-review-v2-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "architectural-art-direction"
+  },
+  "notes": "Original review candidate with three audience tiers, twelve integrated seats, a layered limestone and walnut proscenium, rhythmic acoustic walls, a sculptural ceiling, a central aisle, a presenter podium, and a contract-aligned stage display. Visual approval is required before promotion."
+}

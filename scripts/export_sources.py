@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--scene-id",
         action="append",
-        choices=SCENE_IDS + ("personal-workspace-review-v2", "meeting-room-review-v2"),
+        choices=SCENE_IDS + ("personal-workspace-review-v2", "meeting-room-review-v2", "presentation-room-review-v2"),
     )
     return parser.parse_args(argv)
 

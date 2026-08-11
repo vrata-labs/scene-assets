@@ -23,6 +23,12 @@ def parse_args():
     parser.add_argument("--repo-root", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--skip-render", action="store_true")
+    parser.add_argument(
+        "--scene",
+        action="append",
+        choices=("personal", "meeting", "presentation", "meeting-v2"),
+        help="Build only the selected scene. Repeat to build multiple scenes.",
+    )
     return parser.parse_args(argv)
 
 
@@ -137,12 +143,14 @@ def make_material(
     coat_weight=0.0,
     coat_roughness=0.2,
     sheen_weight=0.0,
+    alpha=1.0,
 ):
     material = bpy.data.materials.new(name)
     material.use_nodes = True
-    material.diffuse_color = color(base_color)
+    base_rgba = (*color(base_color)[:3], alpha)
+    material.diffuse_color = base_rgba
     principled = material.node_tree.nodes.get("Principled BSDF")
-    principled.inputs["Base Color"].default_value = color(base_color)
+    principled.inputs["Base Color"].default_value = base_rgba
     principled.inputs["Roughness"].default_value = roughness
     principled.inputs["Metallic"].default_value = metallic
     if emission:
@@ -161,6 +169,11 @@ def make_material(
     sheen_input = principled.inputs.get("Sheen Weight")
     if sheen_input:
         sheen_input.default_value = sheen_weight
+    if alpha < 1.0:
+        alpha_input = principled.inputs.get("Alpha")
+        if alpha_input:
+            alpha_input.default_value = alpha
+        material.surface_render_method = "DITHERED"
     if pattern:
         color_image, normal_image = make_pattern_images(name, base_color, pattern)
         color_node = material.node_tree.nodes.new("ShaderNodeTexImage")
@@ -275,6 +288,86 @@ def add_torus(name, location, major_radius, minor_radius, material, rotation=(0.
     for polygon in obj.data.polygons:
         polygon.use_smooth = True
     return obj
+
+
+def add_curve_tube(name, points, radius, material, cyclic=False):
+    curve_data = bpy.data.curves.new(name=name, type="CURVE")
+    curve_data.dimensions = "3D"
+    curve_data.resolution_u = 3
+    curve_data.bevel_depth = radius
+    curve_data.bevel_resolution = 3
+    spline = curve_data.splines.new("BEZIER")
+    spline.bezier_points.add(len(points) - 1)
+    for point, coordinates in zip(spline.bezier_points, points):
+        point.co = coordinates
+        point.handle_left_type = "AUTO"
+        point.handle_right_type = "AUTO"
+    spline.use_cyclic_u = cyclic
+    obj = bpy.data.objects.new(name, curve_data)
+    bpy.context.collection.objects.link(obj)
+    assign_material(obj, material)
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.convert(target="MESH")
+    return bpy.context.object
+
+
+def add_display_panel(prefix, center, size, frame_material, screen_material):
+    x, y, z = center
+    width, height = size
+    frame = add_box(f"{prefix}_Frame", (x, y, z), (width + 0.32, 0.18, height + 0.32), frame_material, bevel=0.08)
+    screen = add_box(f"{prefix}_Screen", (x, y - 0.12, z), (width, 0.045, height), screen_material, bevel=0.035)
+    return join_mesh_objects(prefix, [frame, screen])
+
+
+def add_capsule_table(prefix, center, length, width, height, top_material, edge_material, base_material):
+    x, y, z = center
+    end_offset = (length - width) / 2
+    top_parts = [
+        add_box(f"{prefix}_TopCenter", (x, y, z), (length - width, width, height), top_material, bevel=0.045),
+        add_cylinder(f"{prefix}_TopLeft", (x - end_offset, y, z), width / 2, height, top_material, vertices=64, bevel=0.035),
+        add_cylinder(f"{prefix}_TopRight", (x + end_offset, y, z), width / 2, height, top_material, vertices=64, bevel=0.035),
+    ]
+    top = join_mesh_objects(f"{prefix}_Top", top_parts)
+    edge_parts = [
+        add_box(f"{prefix}_EdgeCenter", (x, y, z - height * 0.58), (length - width + 0.08, width + 0.08, height * 0.35), edge_material, bevel=0.025),
+        add_cylinder(f"{prefix}_EdgeLeft", (x - end_offset, y, z - height * 0.58), width / 2 + 0.04, height * 0.35, edge_material, vertices=64, bevel=0.018),
+        add_cylinder(f"{prefix}_EdgeRight", (x + end_offset, y, z - height * 0.58), width / 2 + 0.04, height * 0.35, edge_material, vertices=64, bevel=0.018),
+    ]
+    edge = join_mesh_objects(f"{prefix}_Edge", edge_parts)
+    left_base = add_cylinder(f"{prefix}_BaseLeft", (x - length * 0.22, y, z / 2), 0.46, z, base_material, scale_xy=(1.35, 0.82), vertices=48, bevel=0.055)
+    right_base = add_cylinder(f"{prefix}_BaseRight", (x + length * 0.22, y, z / 2), 0.46, z, base_material, scale_xy=(1.35, 0.82), vertices=48, bevel=0.055)
+    return top, edge, left_base, right_base
+
+
+def add_modern_chair(prefix, center, facing, upholstery, frame_material, accent_material):
+    forward = Vector((facing[0], facing[1]))
+    forward.normalize()
+    right = Vector((forward.y, -forward.x))
+    rotation = math.atan2(-forward.x, forward.y)
+    x, y = center
+    parts = [
+        add_box(f"{prefix}_SeatShell", (x, y, 0.48), (0.82, 0.76, 0.13), frame_material, bevel=0.055, rotation=rotation),
+        add_box(f"{prefix}_SeatCushion", (x, y, 0.57), (0.73, 0.67, 0.12), upholstery, bevel=0.065, rotation=rotation),
+    ]
+    back_xy = Vector((x, y)) - forward * 0.37
+    parts.extend([
+        add_box(f"{prefix}_BackShell", (back_xy.x, back_xy.y, 1.02), (0.83, 0.13, 0.9), frame_material, bevel=0.07, rotation=rotation),
+        add_box(f"{prefix}_BackCushion", (back_xy.x, back_xy.y, 1.03), (0.72, 0.09, 0.69), upholstery, bevel=0.065, rotation=rotation),
+        add_box(f"{prefix}_BackAccent", (back_xy.x, back_xy.y, 1.39), (0.56, 0.15, 0.055), accent_material, bevel=0.02, rotation=rotation),
+    ])
+    for side in (-1.0, 1.0):
+        side_xy = Vector((x, y)) + right * (side * 0.32)
+        parts.append(add_box(
+            f"{prefix}_Leg_{side}",
+            (side_xy.x, side_xy.y, 0.25),
+            (0.055, 0.62, 0.5),
+            frame_material,
+            bevel=0.018,
+            rotation=rotation,
+        ))
+    return join_mesh_objects(prefix, parts)
 
 
 def add_area_light(name, location, target, energy, light_color, size=4.0):
@@ -494,12 +587,26 @@ def render_and_export(repo_root, scene_id, camera_location, camera_target, lens=
         raise RuntimeError(f"published_scene_version_is_immutable:{scene_id}@{RELEASE_VERSION}")
     release_dir.mkdir(parents=True, exist_ok=True)
     source_dir.mkdir(parents=True, exist_ok=True)
-    base_release_dir = repo_root / "assets" / "scenes" / scene_id / "0.1.0"
-    if release_dir != base_release_dir:
-        for static_name in ("scene.json", "LICENSES.md"):
-            target_path = release_dir / static_name
-            if not target_path.exists():
-                shutil.copyfile(base_release_dir / static_name, target_path)
+    scene_root = repo_root / "assets" / "scenes" / scene_id
+    previous_release_dirs = sorted(
+        (
+            candidate
+            for candidate in scene_root.iterdir()
+            if candidate.is_dir()
+            and candidate != release_dir
+            and (candidate / "scene.json").exists()
+            and re.fullmatch(r"\d+\.\d+\.\d+", candidate.name)
+        ),
+        key=lambda candidate: tuple(int(part) for part in candidate.name.split(".")),
+        reverse=True,
+    )
+    for static_name in ("scene.json", "LICENSES.md"):
+        target_path = release_dir / static_name
+        if target_path.exists():
+            continue
+        if not previous_release_dirs:
+            raise RuntimeError(f"missing_release_metadata:{scene_id}@{RELEASE_VERSION}:{static_name}")
+        shutil.copyfile(previous_release_dirs[0] / static_name, target_path)
 
     camera_data = bpy.data.cameras.new("Review Camera")
     camera = bpy.data.objects.new("Review Camera", camera_data)
@@ -747,6 +854,192 @@ def build_meeting(repo_root):
     render_and_export(repo_root, "meeting-room-review-v1", (-3.8, -5.25, 1.67), (0.25, 1.05, 1.45), lens=29.0)
 
 
+def build_meeting_v2(repo_root):
+    reset_scene()
+    limestone = make_material("Meeting V2 Warm Limestone", "#B8AA96", 0.84, pattern="stone")
+    plaster = make_material("Meeting V2 Soft Plaster", "#D8D2C7", 0.9, pattern="plaster")
+    charcoal = make_material("Meeting V2 Charcoal", "#171B1D", 0.56, metallic=0.12)
+    graphite = make_material("Meeting V2 Graphite", "#252B2D", 0.48, metallic=0.28)
+    floor = make_material("Meeting V2 Stone Floor", "#716A60", 0.86, pattern="stone")
+    oak = make_material("Meeting V2 Smoked Oak", "#8D6242", 0.62, pattern="wood", coat_weight=0.13, coat_roughness=0.32)
+    light_oak = make_material("Meeting V2 Light Oak", "#BA8C62", 0.6, pattern="wood", coat_weight=0.16, coat_roughness=0.28)
+    walnut = make_material("Meeting V2 Walnut", "#5B3B2A", 0.58, pattern="wood", coat_weight=0.18, coat_roughness=0.3)
+    sage = make_material("Meeting V2 Sage Textile", "#66776E", 0.84, pattern="textile", sheen_weight=0.18)
+    clay = make_material("Meeting V2 Clay Textile", "#9A604B", 0.84, pattern="textile", sheen_weight=0.16)
+    sand = make_material("Meeting V2 Sand Textile", "#B9A78D", 0.86, pattern="textile", sheen_weight=0.16)
+    rug = make_material("Meeting V2 Woven Rug", "#4B5553", 0.95, pattern="carpet", sheen_weight=0.08)
+    brass = make_material("Meeting V2 Aged Brass", "#A98A58", 0.35, metallic=0.74)
+    screen = make_material("Meeting V2 Display", "#E7E2D6", 0.38, emission="#D8E6E2", emission_strength=0.2, coat_weight=0.22, coat_roughness=0.2)
+    whiteboard = make_material("Meeting V2 Collaboration Surface", "#E4E0D6", 0.4, coat_weight=0.2, coat_roughness=0.18)
+    warm_light = make_material("Meeting V2 Warm Light", "#C5A26C", 0.32, emission="#E8C78E", emission_strength=0.58)
+    cool_light = make_material("Meeting V2 Cool Light", "#739C9B", 0.34, emission="#A9CECB", emission_strength=0.42)
+    glass = make_material("Meeting V2 Tinted Glass", "#6B8587", 0.2, metallic=0.08, coat_weight=0.5, coat_roughness=0.08, alpha=0.28)
+    city_dark = make_material("Meeting V2 Exterior", "#162329", 0.8, emission="#162329", emission_strength=0.16)
+    city_light = make_material("Meeting V2 Exterior Light", "#D8B879", 0.4, emission="#D8B879", emission_strength=1.4)
+    green = make_material("Meeting V2 Plant Green", "#496B55", 0.88)
+    planter = make_material("Meeting V2 Planter", "#7A7065", 0.76, pattern="stone")
+
+    add_box("MeetingV2_Floor", (0.0, 0.0, -0.1), (13.5, 12.5, 0.2), floor, bevel=0.02)
+    add_box("MeetingV2_BackWall", (0.0, 6.15, 2.4), (13.5, 0.2, 4.8), limestone, bevel=0.025)
+    add_box("MeetingV2_LeftWall", (-6.65, 0.0, 2.4), (0.2, 12.5, 4.8), charcoal, bevel=0.025)
+    add_box("MeetingV2_Ceiling", (0.0, 0.0, 4.74), (13.5, 12.5, 0.12), plaster, bevel=0.025)
+    add_box("MeetingV2_FrontLintel", (0.0, -6.12, 4.2), (13.5, 0.22, 1.05), charcoal, bevel=0.035)
+    add_box("MeetingV2_FrontLeftPier", (-5.8, -6.12, 2.05), (1.7, 0.22, 4.1), limestone, bevel=0.035)
+    add_box("MeetingV2_FrontRightPier", (5.8, -6.12, 2.05), (1.7, 0.22, 4.1), limestone, bevel=0.035)
+    add_box("MeetingV2_BackBaseboard", (0.0, 6.0, 0.14), (13.15, 0.1, 0.28), charcoal, bevel=0.025)
+    add_box("MeetingV2_LeftBaseboard", (-6.5, 0.0, 0.14), (0.1, 12.1, 0.28), graphite, bevel=0.025)
+
+    window_parts = []
+    for index, y in enumerate((-4.65, -1.55, 1.55, 4.65)):
+        window_parts.append(add_box(f"MeetingV2_Window_{index}", (6.58, y, 2.48), (0.045, 2.92, 4.35), glass, bevel=0.012))
+    for y in (-6.08, -3.1, 0.0, 3.1, 6.08):
+        window_parts.append(add_box(f"MeetingV2_WindowMullion_{y}", (6.54, y, 2.45), (0.11, 0.09, 4.45), charcoal, bevel=0.018))
+    window_parts.extend([
+        add_box("MeetingV2_WindowTop", (6.54, 0.0, 4.62), (0.11, 12.15, 0.13), charcoal, bevel=0.018),
+        add_box("MeetingV2_WindowBottom", (6.54, 0.0, 0.3), (0.11, 12.15, 0.18), charcoal, bevel=0.018),
+    ])
+    join_mesh_objects("MeetingV2_WindowWall", window_parts)
+
+    exterior_parts = [add_box("MeetingV2_ExteriorBackdrop", (7.25, 0.0, 2.4), (0.12, 12.1, 4.6), city_dark, bevel=0.01)]
+    for index, (y, z, height) in enumerate(((-4.6, 1.15, 1.6), (-3.2, 1.6, 2.5), (-1.4, 1.25, 1.8), (0.2, 1.75, 2.9), (2.1, 1.3, 2.0), (3.8, 1.8, 3.0), (5.1, 1.05, 1.4))):
+        exterior_parts.append(add_box(f"MeetingV2_ExteriorTower_{index}", (7.08, y, z), (0.12, 0.92, height), graphite, bevel=0.025))
+        for floor_index in range(max(1, int(height / 0.55))):
+            exterior_parts.append(add_box(
+                f"MeetingV2_ExteriorWindow_{index}_{floor_index}",
+                (7.0, y, 0.55 + floor_index * 0.48),
+                (0.03, 0.42, 0.12),
+                city_light if (index + floor_index) % 3 == 0 else cool_light,
+                bevel=0.008,
+            ))
+    join_mesh_objects("MeetingV2_ExteriorCity", exterior_parts)
+
+    add_box("MeetingV2_CeilingInset", (0.0, 0.1, 4.65), (11.8, 10.7, 0.08), charcoal, bevel=0.14)
+    add_box("MeetingV2_CeilingIsland", (0.15, 0.4, 4.57), (8.8, 6.9, 0.12), plaster, bevel=0.2)
+    ceiling_slats = []
+    for index in range(12):
+        ceiling_slats.append(add_box(
+            f"MeetingV2_CeilingSlat_{index}",
+            (-5.25 + index * 0.22, 1.0, 4.48),
+            (0.1, 7.8, 0.12),
+            oak if index % 2 else walnut,
+            bevel=0.025,
+        ))
+    join_mesh_objects("MeetingV2_CeilingSlats", ceiling_slats)
+
+    add_curve_tube(
+        "MeetingV2_SculpturalLight_Warm",
+        [(-3.4, -2.1, 4.32), (-1.7, -0.4, 4.24), (0.0, -1.35, 4.3), (2.0, 0.25, 4.23), (3.45, -1.5, 4.3), (1.4, -2.65, 4.25), (-1.0, -2.25, 4.31)],
+        0.075,
+        warm_light,
+        cyclic=True,
+    )
+    add_curve_tube(
+        "MeetingV2_SculpturalLight_Cool",
+        [(-2.6, 0.45, 4.31), (-1.1, 2.15, 4.24), (0.65, 1.1, 4.3), (2.8, 2.45, 4.23), (3.35, 0.55, 4.3), (1.05, -0.15, 4.24), (-0.8, 0.75, 4.3)],
+        0.055,
+        cool_light,
+        cyclic=True,
+    )
+
+    back_panels = []
+    panel_widths = (0.48, 0.62, 0.42, 0.72, 0.5, 0.66, 0.44)
+    cursor_x = -5.95
+    for index, panel_width in enumerate(panel_widths):
+        height = 2.55 + (index % 3) * 0.32
+        back_panels.append(add_box(
+            f"MeetingV2_BackRelief_{index}",
+            (cursor_x + panel_width / 2, 5.98 - (index % 2) * 0.045, 2.35),
+            (panel_width - 0.07, 0.18 + (index % 2) * 0.09, height),
+            light_oak if index % 3 else walnut,
+            bevel=0.045,
+        ))
+        cursor_x += panel_width
+    join_mesh_objects("MeetingV2_BackRelief", back_panels)
+    add_box("MeetingV2_BackReliefPlinth", (-4.2, 5.83, 0.52), (3.9, 0.48, 0.72), charcoal, bevel=0.08)
+    add_display_panel("MeetingV2_MainDisplay", (1.45, 6.0, 2.55), (5.6, 3.15), charcoal, screen)
+
+    side_panel_parts = []
+    for index in range(8):
+        side_panel_parts.append(add_box(
+            f"MeetingV2_LeftAcoustic_{index}",
+            (-6.5, -3.9 + index * 1.05, 2.55),
+            (0.16, 0.78, 2.75 + (index % 3) * 0.22),
+            sage if index % 2 else sand,
+            bevel=0.07,
+        ))
+    join_mesh_objects("MeetingV2_LeftAcousticWall", side_panel_parts)
+    add_side_screen("MeetingV2_CollaborationWall", -6.43, 1.7, 2.32, (4.6, 2.4), graphite, whiteboard, brass, facing_right=True)
+
+    add_box("MeetingV2_Rug", (0.0, 0.65, 0.045), (8.5, 6.2, 0.08), rug, bevel=0.14)
+    add_capsule_table("MeetingV2_Table", (0.0, 0.65, 0.88), 6.0, 1.95, 0.17, light_oak, brass, charcoal)
+    add_box("MeetingV2_TablePower", (0.0, 0.65, 1.005), (0.72, 0.28, 0.05), graphite, bevel=0.035)
+    add_box("MeetingV2_TablePowerInset", (0.0, 0.64, 1.038), (0.38, 0.09, 0.018), cool_light, bevel=0.009)
+
+    chairs = [
+        ("FrontLeft", (-1.65, -1.15), (0.0, 1.0), clay),
+        ("FrontRight", (1.65, -1.15), (0.0, 1.0), sage),
+        ("BackLeft", (-1.65, 2.5), (0.0, -1.0), sage),
+        ("BackRight", (1.65, 2.5), (0.0, -1.0), sand),
+    ]
+    for label, center, facing, upholstery in chairs:
+        add_modern_chair(f"MeetingV2_Chair_{label}", center, facing, upholstery, charcoal, brass)
+
+    table_decor = []
+    for index, x in enumerate((-2.15, -0.75, 0.75, 2.15)):
+        table_decor.extend([
+            add_cylinder(f"MeetingV2_Cup_{index}", (x, 0.55 + (index % 2) * 0.28, 1.09), 0.075, 0.17, plaster, vertices=24, bevel=0.014),
+            add_cylinder(f"MeetingV2_Coaster_{index}", (x, 0.55 + (index % 2) * 0.28, 1.008), 0.13, 0.018, brass, vertices=24, bevel=0.006),
+        ])
+    table_decor.extend([
+        add_box("MeetingV2_Notebook", (-0.5, 0.18, 1.03), (0.62, 0.42, 0.035), clay, bevel=0.025),
+        add_box("MeetingV2_Tablet", (0.6, 1.0, 1.035), (0.78, 0.48, 0.035), graphite, bevel=0.035),
+    ])
+    join_mesh_objects("MeetingV2_TableDecor", table_decor)
+
+    credenza_parts = [
+        add_box("MeetingV2_CredenzaBody", (4.6, 5.22, 0.68), (3.25, 0.72, 1.18), walnut, bevel=0.09),
+        add_box("MeetingV2_CredenzaTop", (4.6, 5.18, 1.31), (3.42, 0.82, 0.09), limestone, bevel=0.045),
+    ]
+    for index in range(4):
+        credenza_parts.extend([
+            add_box(f"MeetingV2_CredenzaDoor_{index}", (3.45 + index * 0.77, 4.81, 0.7), (0.66, 0.04, 0.86), oak if index % 2 else light_oak, bevel=0.035),
+            add_box(f"MeetingV2_CredenzaPull_{index}", (3.45 + index * 0.77, 4.77, 0.73), (0.19, 0.035, 0.035), brass, bevel=0.008),
+        ])
+    join_mesh_objects("MeetingV2_Credenza", credenza_parts)
+    add_cylinder("MeetingV2_CredenzaVase", (3.75, 5.0, 1.52), 0.16, 0.34, planter, vertices=32, bevel=0.035)
+    for index, offset in enumerate(((-0.12, 0.0), (0.1, 0.05), (0.0, -0.09))):
+        add_sphere(f"MeetingV2_CredenzaLeaf_{index}", (3.75 + offset[0], 5.0 + offset[1], 1.85 + index * 0.09), (0.11, 0.06, 0.24), green)
+    add_sphere("MeetingV2_CredenzaLamp", (5.35, 5.0, 1.67), (0.28, 0.28, 0.31), warm_light)
+    add_cylinder("MeetingV2_CredenzaLampStem", (5.35, 5.0, 1.43), 0.035, 0.3, brass, vertices=16, bevel=0.008)
+
+    bench_parts = [
+        add_box("MeetingV2_BenchBase", (-4.75, -4.35, 0.36), (3.15, 0.92, 0.58), charcoal, bevel=0.09),
+        add_box("MeetingV2_BenchSeat", (-4.75, -4.35, 0.7), (2.95, 0.84, 0.18), sand, bevel=0.08),
+        add_box("MeetingV2_BenchBack", (-4.75, -4.78, 1.25), (2.95, 0.16, 1.0), sage, bevel=0.08),
+        add_box("MeetingV2_BenchPillow", (-5.55, -4.58, 1.02), (0.65, 0.18, 0.54), clay, bevel=0.09),
+    ]
+    join_mesh_objects("MeetingV2_Bench", bench_parts)
+    add_planter("MeetingV2_PlantFront", (-5.75, -2.85, 0.0), planter, green, scale=1.25)
+    add_planter("MeetingV2_PlantBack", (5.55, 3.9, 0.0), planter, green, scale=1.05)
+
+    add_box("MeetingV2_DoorFrameTop", (4.85, -5.95, 3.65), (2.4, 0.22, 0.18), charcoal, bevel=0.035)
+    for x in (3.72, 5.98):
+        add_box(f"MeetingV2_DoorFrame_{x}", (x, -5.95, 1.9), (0.18, 0.22, 3.55), charcoal, bevel=0.035)
+    add_box("MeetingV2_Door", (4.85, -5.99, 1.85), (2.05, 0.08, 3.35), glass, bevel=0.025)
+    add_box("MeetingV2_DoorHandle", (4.08, -6.08, 1.7), (0.06, 0.06, 0.62), brass, bevel=0.018)
+
+    configure_world("#384247", 0.42)
+    add_area_light("MeetingV2_Key", (0.0, -1.7, 4.35), (0.0, 0.8, 0.9), 1500, "#F4D7B4", 5.2)
+    add_area_light("MeetingV2_WindowFill", (5.7, 0.2, 3.1), (0.0, 0.6, 1.1), 1150, "#B8D7D4", 4.2)
+    add_area_light("MeetingV2_DisplayFill", (1.45, 5.25, 3.6), (0.0, 1.0, 1.2), 850, "#D7E9E4", 3.0)
+    for index, (x, y, light_color) in enumerate(((-2.5, -1.5, "#FFE3B8"), (0.0, 0.2, "#D4ECE8"), (2.6, -1.2, "#FFE3B8"), (0.6, 2.2, "#D4ECE8"))):
+        add_point_light(f"MeetingV2_RuntimeCeiling_{index}", (x, y, 4.08), 28, light_color, radius=0.55, cutoff=7.5)
+    add_spot_light("MeetingV2_RuntimeDisplay", (1.45, 4.75, 4.2), (1.45, 5.9, 2.15), 38, "#D4E9E4", cutoff=6.5)
+    add_point_light("MeetingV2_RuntimeCredenza", (5.35, 4.8, 1.75), 24, "#FFD6A2", radius=0.38, cutoff=4.2)
+
+    render_and_export(repo_root, "meeting-room-review-v2", (-3.35, -5.05, 1.78), (0.35, 1.45, 1.68), lens=27.0)
+
+
 def build_presentation(repo_root):
     reset_scene()
     wall = make_material("Presentation Ink Wall", "#191927", 0.82, pattern="plaster")
@@ -861,10 +1154,16 @@ def main():
     if not re.fullmatch(r"\d+\.\d+\.\d+", RELEASE_VERSION):
         raise RuntimeError(f"invalid_release_version:{RELEASE_VERSION}")
     repo_root = Path(args.repo_root).resolve()
-    build_personal(repo_root)
-    build_meeting(repo_root)
-    build_presentation(repo_root)
-    print(f"Built three Vrata scene candidates at {RELEASE_VERSION}.")
+    builders = {
+        "personal": build_personal,
+        "meeting": build_meeting,
+        "presentation": build_presentation,
+        "meeting-v2": build_meeting_v2,
+    }
+    selected_scenes = args.scene or ("personal", "meeting", "presentation")
+    for scene_name in selected_scenes:
+        builders[scene_name](repo_root)
+    print(f"Built {', '.join(selected_scenes)} Vrata scene candidate(s) at {RELEASE_VERSION}.")
 
 
 main()

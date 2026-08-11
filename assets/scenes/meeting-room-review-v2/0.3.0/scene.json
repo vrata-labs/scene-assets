@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "meeting-room-review-v2",
+  "label": "Meeting Room Architectural Candidate",
+  "source": "Vrata original procedural Blender architectural art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 5.25
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "meeting-room-review-v2-front-left-seat",
+        "position": {
+          "x": -1.65,
+          "y": 0.48,
+          "z": 1.15
+        },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front left chair"
+      },
+      {
+        "id": "meeting-room-review-v2-front-right-seat",
+        "position": {
+          "x": 1.65,
+          "y": 0.48,
+          "z": 1.15
+        },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Front right chair"
+      },
+      {
+        "id": "meeting-room-review-v2-back-left-seat",
+        "position": {
+          "x": -1.65,
+          "y": 0.48,
+          "z": -2.5
+        },
+        "yaw": 3.142,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Back left chair"
+      },
+      {
+        "id": "meeting-room-review-v2-back-right-seat",
+        "position": {
+          "x": 1.65,
+          "y": 0.48,
+          "z": -2.5
+        },
+        "yaw": 3.142,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Back right chair"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Shared display",
+      "kind": "wall",
+      "widthM": 5.6,
+      "heightM": 3.15,
+      "widthPx": 1920,
+      "heightPx": 1080,
+      "transform": {
+        "x": 1.45,
+        "y": 2.55,
+        "z": -5.88,
+        "yaw": 0
+      },
+      "visible": true
+    },
+    {
+      "surfaceId": "whiteboard-wall",
+      "label": "Collaboration wall",
+      "kind": "wall",
+      "widthM": 4.6,
+      "heightM": 2.4,
+      "widthPx": 1920,
+      "heightPx": 1000,
+      "transform": {
+        "x": -6.26,
+        "y": 2.32,
+        "z": -1.7,
+        "yaw": 1.571
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 13.5,
+    "height": 4.8,
+    "depth": 12.5
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "meeting-room-review-v2-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "architectural-art-direction"
+  },
+  "notes": "Original review candidate with layered stone and wood architecture, glazing, a procedural exterior, integrated planting, a sculptural ceiling light, four collaboration seats, and contract-aligned media surfaces. Visual approval is required before promotion."
+}

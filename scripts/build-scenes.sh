@@ -10,6 +10,10 @@ if [[ "${SKIP_RENDER:-0}" == "1" ]]; then
   extra_args+=(--skip-render)
 fi
 
+if [[ -n "${BUILD_SCENE:-}" ]]; then
+  extra_args+=(--scene "$BUILD_SCENE")
+fi
+
 if ! command -v "$blender_bin" >/dev/null 2>&1 && [[ ! -x "$blender_bin" ]]; then
   echo "blender_not_found: set BLENDER_BIN to Blender 4.5.12 LTS" >&2
   exit 1

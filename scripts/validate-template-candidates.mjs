@@ -17,6 +17,18 @@ const releases = [
     expectedErrorCodes: ["template_scene_id_mismatch", "template_scene_version_mismatch"]
   },
   {
+    templateId: "meeting-room-basic",
+    sceneId: "meeting-room-review-v2",
+    sceneVersion: "0.3.0",
+    expectedErrorCodes: ["template_scene_id_mismatch", "template_scene_version_mismatch"]
+  },
+  {
+    templateId: "meeting-room-basic",
+    sceneId: "meeting-room-review-v2",
+    sceneVersion: "0.3.1",
+    expectedErrorCodes: ["template_scene_id_mismatch", "template_scene_version_mismatch"]
+  },
+  {
     templateId: "presentation-room-basic",
     sceneId: "presentation-room-review-v1",
     sceneVersion: "0.2.2",

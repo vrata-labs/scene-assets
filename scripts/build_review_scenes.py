@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--scene",
         action="append",
-        choices=("personal", "meeting", "presentation", "meeting-v2"),
+        choices=("personal", "personal-v2", "meeting", "presentation", "meeting-v2"),
         help="Build only the selected scene. Repeat to build multiple scenes.",
     )
     return parser.parse_args(argv)
@@ -753,6 +753,203 @@ def build_personal(repo_root):
     render_and_export(repo_root, "personal-workspace-review-v1", (0.0, -4.45, 1.65), (0.35, 2.25, 1.55), lens=29.0)
 
 
+def build_personal_v2(repo_root):
+    reset_scene()
+    limestone = make_material("Personal V2 Limestone", "#B9AA94", 0.86, pattern="stone")
+    plaster = make_material("Personal V2 Warm Plaster", "#D7D0C4", 0.91, pattern="plaster")
+    charcoal = make_material("Personal V2 Charcoal", "#1A2022", 0.56, metallic=0.14)
+    graphite = make_material("Personal V2 Graphite", "#30383A", 0.48, metallic=0.32)
+    floor = make_material("Personal V2 Honed Floor", "#777167", 0.88, pattern="stone")
+    walnut = make_material("Personal V2 Walnut", "#60412E", 0.62, pattern="wood", coat_weight=0.16, coat_roughness=0.31)
+    oak = make_material("Personal V2 Natural Oak", "#A87953", 0.64, pattern="wood", coat_weight=0.14, coat_roughness=0.34)
+    deep_blue = make_material("Personal V2 Deep Blue Textile", "#314B59", 0.86, pattern="textile", sheen_weight=0.18)
+    rust = make_material("Personal V2 Rust Textile", "#925C48", 0.86, pattern="textile", sheen_weight=0.16)
+    sand = make_material("Personal V2 Sand Textile", "#B6A48B", 0.88, pattern="textile", sheen_weight=0.16)
+    rug = make_material("Personal V2 Woven Rug", "#455354", 0.96, pattern="carpet", sheen_weight=0.08)
+    brass = make_material("Personal V2 Aged Brass", "#A98B59", 0.34, metallic=0.76)
+    screen = make_material("Personal V2 Workspace Display", "#E4E1D7", 0.38, emission="#D5E4DF", emission_strength=0.18, coat_weight=0.22, coat_roughness=0.2)
+    warm_light = make_material("Personal V2 Warm Light", "#C6A36C", 0.34, emission="#E9C88F", emission_strength=0.52)
+    cool_light = make_material("Personal V2 Cool Light", "#789C9A", 0.36, emission="#B2D0CC", emission_strength=0.36)
+    glass = make_material("Personal V2 Tinted Glass", "#698184", 0.22, metallic=0.06, coat_weight=0.5, coat_roughness=0.08, alpha=0.26)
+    city_dark = make_material("Personal V2 Exterior", "#17252A", 0.82, emission="#17252A", emission_strength=0.14)
+    city_light = make_material("Personal V2 Exterior Light", "#D6B77D", 0.42, emission="#D6B77D", emission_strength=1.25)
+    green = make_material("Personal V2 Plant Green", "#486A54", 0.9)
+    planter = make_material("Personal V2 Planter", "#756C62", 0.8, pattern="stone")
+
+    add_box("PersonalV2_Floor", (0.0, 0.0, -0.1), (12.6, 12.8, 0.2), floor, bevel=0.02)
+    add_box("PersonalV2_BackWall", (0.0, 6.3, 2.4), (12.6, 0.2, 4.8), plaster, bevel=0.025)
+    add_box("PersonalV2_LeftWall", (-6.2, 0.0, 2.4), (0.2, 12.8, 4.8), charcoal, bevel=0.025)
+    add_box("PersonalV2_Ceiling", (0.0, 0.0, 4.74), (12.6, 12.8, 0.12), charcoal, bevel=0.025)
+    add_box("PersonalV2_FrontLintel", (0.0, -6.28, 4.18), (12.6, 0.22, 1.08), charcoal, bevel=0.035)
+    add_box("PersonalV2_FrontLeftPier", (-5.5, -6.28, 2.05), (1.6, 0.22, 4.1), limestone, bevel=0.035)
+    add_box("PersonalV2_FrontRightPier", (5.5, -6.28, 2.05), (1.6, 0.22, 4.1), limestone, bevel=0.035)
+    add_box("PersonalV2_BackBaseboard", (0.0, 6.14, 0.14), (12.25, 0.1, 0.28), charcoal, bevel=0.025)
+    add_box("PersonalV2_LeftBaseboard", (-6.04, 0.0, 0.14), (0.1, 12.45, 0.28), graphite, bevel=0.025)
+
+    window_parts = []
+    for index, y in enumerate((-4.8, -1.6, 1.6, 4.8)):
+        window_parts.append(add_box(f"PersonalV2_Window_{index}", (6.18, y, 2.48), (0.045, 3.02, 4.35), glass, bevel=0.012))
+    for y in (-6.24, -3.2, 0.0, 3.2, 6.24):
+        window_parts.append(add_box(f"PersonalV2_WindowMullion_{y}", (6.14, y, 2.45), (0.11, 0.09, 4.45), charcoal, bevel=0.018))
+    window_parts.extend([
+        add_box("PersonalV2_WindowTop", (6.14, 0.0, 4.62), (0.11, 12.45, 0.13), charcoal, bevel=0.018),
+        add_box("PersonalV2_WindowBottom", (6.14, 0.0, 0.3), (0.11, 12.45, 0.18), charcoal, bevel=0.018),
+    ])
+    join_mesh_objects("PersonalV2_WindowWall", window_parts)
+
+    exterior_parts = [add_box("PersonalV2_ExteriorBackdrop", (6.85, 0.0, 2.4), (0.12, 12.4, 4.6), city_dark, bevel=0.01)]
+    towers = ((-5.0, 1.25, 1.8), (-3.65, 1.8, 2.9), (-1.95, 1.4, 2.2), (-0.15, 1.95, 3.2), (1.75, 1.25, 1.9), (3.35, 1.65, 2.7), (5.0, 1.05, 1.5))
+    for index, (y, z, height) in enumerate(towers):
+        exterior_parts.append(add_box(f"PersonalV2_ExteriorTower_{index}", (6.7, y, z), (0.12, 0.82, height), graphite, bevel=0.025))
+        for floor_index in range(max(1, int(height / 0.55))):
+            exterior_parts.append(add_box(
+                f"PersonalV2_ExteriorWindow_{index}_{floor_index}",
+                (6.62, y, 0.52 + floor_index * 0.48),
+                (0.03, 0.38, 0.11),
+                city_light if (index + floor_index) % 3 == 0 else cool_light,
+                bevel=0.007,
+            ))
+    join_mesh_objects("PersonalV2_ExteriorCity", exterior_parts)
+
+    add_box("PersonalV2_CeilingInset", (0.25, 0.15, 4.65), (10.7, 10.95, 0.08), plaster, bevel=0.16)
+    add_box("PersonalV2_CeilingIsland", (0.65, 0.5, 4.56), (7.55, 7.35, 0.12), limestone, bevel=0.22)
+    ceiling_slats = []
+    for index in range(11):
+        ceiling_slats.append(add_box(
+            f"PersonalV2_CeilingSlat_{index}",
+            (-5.15 + index * 0.2, 0.9, 4.47),
+            (0.085, 7.4, 0.12),
+            walnut if index % 2 else oak,
+            bevel=0.022,
+        ))
+    join_mesh_objects("PersonalV2_CeilingSlats", ceiling_slats)
+    for x, y, width, depth in ((0.0, -5.45, 10.6, 0.07), (0.0, 5.46, 10.6, 0.07), (-5.55, 0.0, 0.07, 10.7)):
+        add_box(f"PersonalV2_Cove_{x}_{y}", (x, y, 4.48), (width, depth, 0.055), warm_light, bevel=0.018)
+    add_curve_tube(
+        "PersonalV2_SculpturalLight",
+        [(-2.25, -2.15, 4.25), (-0.7, -1.2, 4.19), (0.85, -1.75, 4.25), (2.55, -0.45, 4.2), (1.35, 0.9, 4.25), (-0.25, 0.15, 4.2), (-1.85, 1.2, 4.25)],
+        0.062,
+        warm_light,
+    )
+    add_curve_tube(
+        "PersonalV2_TaskLight",
+        [(-1.65, 2.7, 4.25), (-0.35, 2.05, 4.19), (1.15, 2.7, 4.24), (2.55, 2.0, 4.2)],
+        0.045,
+        cool_light,
+    )
+
+    back_feature_parts = [
+        add_box("PersonalV2_BackFeatureBase", (-4.48, 6.12, 2.42), (2.95, 0.18, 4.42), walnut, bevel=0.055),
+        add_box("PersonalV2_BackFeatureInset", (-4.48, 5.99, 2.42), (2.38, 0.07, 3.78), charcoal, bevel=0.12),
+    ]
+    for index in range(8):
+        back_feature_parts.append(add_box(
+            f"PersonalV2_BackFeatureSlat_{index}",
+            (-5.65 + index * 0.34, 5.89 - (index % 2) * 0.025, 2.43),
+            (0.16, 0.12, 3.55 - (index % 3) * 0.22),
+            oak if index % 3 else walnut,
+            bevel=0.035,
+        ))
+    join_mesh_objects("PersonalV2_BackFeature", back_feature_parts)
+    add_curve_tube(
+        "PersonalV2_ArchiveNiche",
+        [(-5.55, 5.78, 0.55), (-5.55, 5.78, 3.15), (-5.1, 5.78, 3.82), (-4.45, 5.78, 4.02), (-3.8, 5.78, 3.82), (-3.35, 5.78, 3.15), (-3.35, 5.78, 0.55)],
+        0.075,
+        brass,
+    )
+    shelf_parts = []
+    for index, z in enumerate((0.72, 1.38, 2.04, 2.7)):
+        shelf_parts.append(add_box(f"PersonalV2_ArchiveShelf_{index}", (-4.45, 5.72, z), (1.82, 0.38, 0.07), oak, bevel=0.022))
+    for index, (x, z, width, height, material) in enumerate(((-5.02, 0.98, 0.2, 0.42, rust), (-4.72, 1.02, 0.18, 0.5, sand), (-4.0, 1.66, 0.28, 0.48, limestone), (-4.78, 2.34, 0.42, 0.36, deep_blue), (-4.1, 2.98, 0.22, 0.45, rust))):
+        shelf_parts.append(add_box(f"PersonalV2_ArchiveObject_{index}", (x, 5.49, z), (width, 0.18, height), material, bevel=0.025))
+    join_mesh_objects("PersonalV2_ArchiveShelving", shelf_parts)
+
+    add_display_panel("PersonalV2_MainDisplay", (1.45, 6.12, 2.62), (5.2, 2.6), charcoal, screen)
+    credenza_parts = [
+        add_box("PersonalV2_CredenzaBody", (1.45, 5.73, 0.64), (5.3, 0.68, 1.02), walnut, bevel=0.085),
+        add_box("PersonalV2_CredenzaTop", (1.45, 5.68, 1.19), (5.48, 0.78, 0.09), limestone, bevel=0.04),
+    ]
+    for index in range(5):
+        credenza_parts.extend([
+            add_box(f"PersonalV2_CredenzaDoor_{index}", (-0.58 + index * 1.02, 5.34, 0.65), (0.9, 0.04, 0.72), oak if index % 2 else walnut, bevel=0.035),
+            add_box(f"PersonalV2_CredenzaPull_{index}", (-0.58 + index * 1.02, 5.3, 0.69), (0.18, 0.035, 0.035), brass, bevel=0.008),
+        ])
+    join_mesh_objects("PersonalV2_Credenza", credenza_parts)
+    add_sphere("PersonalV2_CredenzaLamp", (3.08, 5.42, 1.54), (0.25, 0.25, 0.29), warm_light)
+    add_cylinder("PersonalV2_CredenzaLampStem", (3.08, 5.42, 1.34), 0.032, 0.28, brass, vertices=16, bevel=0.008)
+
+    add_box("PersonalV2_DeskRug", (0.55, 1.55, 0.045), (6.6, 5.25, 0.08), rug, bevel=0.14)
+    desk_parts = list(add_capsule_table("PersonalV2_Desk", (0.55, 2.0, 0.88), 4.85, 1.36, 0.17, oak, brass, charcoal))
+    desk_parts.extend([
+        add_box("PersonalV2_DeskModesty", (0.55, 2.42, 0.53), (3.4, 0.09, 0.56), walnut, bevel=0.045),
+        add_box("PersonalV2_DeskReturn", (2.55, 1.18, 0.79), (0.82, 2.4, 0.12), limestone, bevel=0.07),
+        add_box("PersonalV2_DeskReturnBody", (2.55, 1.34, 0.42), (0.72, 1.65, 0.72), charcoal, bevel=0.07),
+        add_box("PersonalV2_DeskPower", (1.45, 2.0, 1.005), (0.58, 0.24, 0.045), graphite, bevel=0.025),
+    ])
+    join_mesh_objects("PersonalV2_ExecutiveDesk", desk_parts)
+
+    monitor_parts = [
+        add_box("PersonalV2_MonitorFrame", (-0.05, 2.63, 1.54), (1.72, 0.13, 1.02), charcoal, bevel=0.06),
+        add_box("PersonalV2_MonitorScreen", (-0.05, 2.55, 1.54), (1.55, 0.035, 0.84), screen, bevel=0.025),
+        add_cylinder("PersonalV2_MonitorStem", (-0.05, 2.63, 1.08), 0.04, 0.32, brass, vertices=18, bevel=0.01),
+        add_box("PersonalV2_MonitorBase", (-0.05, 2.55, 0.94), (0.56, 0.32, 0.045), brass, bevel=0.022),
+        add_box("PersonalV2_Keyboard", (-0.1, 1.72, 1.005), (0.72, 0.26, 0.035), graphite, bevel=0.025),
+        add_box("PersonalV2_Notebook", (-1.35, 1.78, 1.01), (0.64, 0.42, 0.035), rust, bevel=0.025),
+        add_cylinder("PersonalV2_Cup", (1.42, 1.72, 1.1), 0.075, 0.18, plaster, vertices=24, bevel=0.014),
+    ]
+    join_mesh_objects("PersonalV2_DeskObjects", monitor_parts)
+    add_modern_chair("PersonalV2_DeskChair", (0.3, 0.86), (0.0, 1.0), deep_blue, charcoal, brass)
+
+    lounge_parts = [
+        add_box("PersonalV2_LoungePlinth", (-4.25, -0.75, 0.12), (3.15, 4.1, 0.2), limestone, bevel=0.12),
+        add_box("PersonalV2_LoungeRug", (-4.18, -0.62, 0.235), (2.82, 3.75, 0.07), sand, bevel=0.14),
+        add_box("PersonalV2_LoungeWallPanel", (-6.02, -0.8, 2.35), (0.12, 4.7, 3.5), deep_blue, bevel=0.08),
+    ]
+    for index, y in enumerate((-2.35, -1.25, -0.15, 0.95)):
+        lounge_parts.append(add_box(
+            f"PersonalV2_LoungeWallRelief_{index}",
+            (-5.91, y, 2.32),
+            (0.13 + (index % 2) * 0.06, 0.72, 2.55 + (index % 3) * 0.3),
+            walnut if index % 2 else oak,
+            bevel=0.055,
+        ))
+    join_mesh_objects("PersonalV2_LoungeArchitecture", lounge_parts)
+    add_modern_chair("PersonalV2_LoungeChair", (-3.75, -0.25), (0.78, 0.62), rust, charcoal, brass)
+    add_cylinder("PersonalV2_LoungeTableTop", (-2.65, 0.2, 0.56), 0.46, 0.11, limestone, vertices=48, bevel=0.04)
+    add_cylinder("PersonalV2_LoungeTableStem", (-2.65, 0.2, 0.3), 0.055, 0.52, brass, vertices=18, bevel=0.012)
+    add_cylinder("PersonalV2_LoungeTableBase", (-2.65, 0.2, 0.055), 0.3, 0.08, charcoal, vertices=36, bevel=0.025)
+    add_sphere("PersonalV2_LoungeTableObject", (-2.65, 0.2, 0.78), (0.16, 0.16, 0.2), warm_light)
+
+    divider_parts = []
+    for index in range(9):
+        divider_parts.append(add_box(
+            f"PersonalV2_DividerSlat_{index}",
+            (-2.5 + index * 0.18, -2.85, 1.68),
+            (0.075, 0.28, 3.15 - (index % 3) * 0.22),
+            walnut if index % 2 else charcoal,
+            bevel=0.022,
+        ))
+    divider_parts.append(add_box("PersonalV2_DividerPlanter", (-1.8, -2.82, 0.42), (2.5, 0.72, 0.72), limestone, bevel=0.09))
+    join_mesh_objects("PersonalV2_Divider", divider_parts)
+
+    add_planter("PersonalV2_PlantLounge", (-5.1, -2.75, 0.23), planter, green, scale=1.22)
+    add_planter("PersonalV2_PlantWindow", (5.05, 3.9, 0.0), planter, green, scale=1.18)
+    add_planter("PersonalV2_PlantDivider", (-0.95, -2.8, 0.72), planter, green, scale=0.72)
+
+    configure_world("#465054", 0.44)
+    add_area_light("PersonalV2_Key", (0.0, -1.4, 4.35), (0.35, 1.6, 1.0), 1500, "#F4D8B6", 5.0)
+    add_area_light("PersonalV2_WindowFill", (5.45, 0.0, 3.15), (0.2, 1.1, 1.2), 1200, "#B9D8D5", 4.3)
+    add_area_light("PersonalV2_DisplayFill", (1.45, 5.3, 3.6), (1.0, 2.3, 1.2), 760, "#D5E7E2", 3.0)
+    add_area_light("PersonalV2_LoungeFill", (-4.2, -0.4, 3.4), (-3.6, -0.3, 0.8), 720, "#F2CFA5", 2.8)
+    for index, (x, y, light_color) in enumerate(((-1.8, -1.4, "#FFE2B5"), (0.4, -0.4, "#D5ECE7"), (2.35, -0.9, "#FFE2B5"), (-0.1, 2.4, "#D5ECE7"))):
+        add_point_light(f"PersonalV2_RuntimeCeiling_{index}", (x, y, 4.03), 27, light_color, radius=0.52, cutoff=7.2)
+    add_spot_light("PersonalV2_RuntimeDesk", (0.4, 2.0, 4.18), (0.35, 1.85, 0.9), 36, "#E5D6B7", cutoff=6.2)
+    add_point_light("PersonalV2_RuntimeCredenza", (3.08, 5.25, 1.62), 22, "#FFD7A4", radius=0.36, cutoff=4.0)
+    add_point_light("PersonalV2_RuntimeLounge", (-3.2, -0.15, 2.4), 24, "#FFD8A8", radius=0.4, cutoff=4.5)
+
+    render_and_export(repo_root, "personal-workspace-review-v2", (0.0, -5.2, 1.76), (0.35, 1.55, 1.64), lens=27.0)
+
+
 def build_meeting(repo_root):
     reset_scene()
     wall = make_material("Meeting Deep Teal Wall", "#12343D", 0.8, pattern="plaster")
@@ -1156,6 +1353,7 @@ def main():
     repo_root = Path(args.repo_root).resolve()
     builders = {
         "personal": build_personal,
+        "personal-v2": build_personal_v2,
         "meeting": build_meeting,
         "presentation": build_presentation,
         "meeting-v2": build_meeting_v2,

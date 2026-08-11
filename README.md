@@ -24,10 +24,11 @@ calibrates those lights for the Three.js runtime's physical intensity units.
 runtime planes from decorative overlays, and consolidates static furniture for
 mobile/XR mesh headroom.
 
-The replacement art track starts with `meeting-room-review-v2/0.3.0`. It uses
-private SenseTower scenes only as a visual benchmark. No private geometry,
-materials, textures, images, or source files may enter this repository. See
-`docs/visual-direction.md` for the mandatory visual approval gate.
+The replacement art track includes `meeting-room-review-v2/0.3.x` and
+`personal-workspace-review-v2/0.3.0`. It uses private SenseTower scenes only as
+a visual benchmark. No private geometry, materials, textures, images, or source
+files may enter this repository. See `docs/visual-direction.md` for the
+mandatory visual approval gate.
 
 ## Layout
 
@@ -86,6 +87,13 @@ The meeting replacement candidate can be rebuilt and verified independently:
 ```bash
 RELEASE_VERSION=0.3.1 BUILD_SCENE=meeting-v2 BLENDER_BIN=/path/to/blender pnpm build:scenes
 RELEASE_VERSION=0.3.1 SOURCE_SCENE_IDS=meeting-room-review-v2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
+```
+
+The personal workspace replacement candidate uses the same selective path:
+
+```bash
+RELEASE_VERSION=0.3.0 BUILD_SCENE=personal-v2 BLENDER_BIN=/path/to/blender pnpm build:scenes
+RELEASE_VERSION=0.3.0 SOURCE_SCENE_IDS=personal-workspace-review-v2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
 ```
 
 The official origin is `https://github.com/vrata-labs/scene-assets`. Runtime

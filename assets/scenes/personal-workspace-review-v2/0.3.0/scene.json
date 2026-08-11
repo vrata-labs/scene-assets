@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "personal-workspace-review-v2",
+  "label": "Personal Workspace Architectural Candidate",
+  "source": "Vrata original procedural Blender architectural art pass",
+  "glbPath": "scene.glb",
+  "renderMode": "clean",
+  "spawnPoints": [
+    {
+      "id": "main",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 5.2
+      }
+    }
+  ],
+  "anchors": {
+    "teleportFloorY": 0,
+    "seatAnchors": [
+      {
+        "id": "personal-workspace-review-v2-desk-seat",
+        "position": {
+          "x": 0.3,
+          "y": 0.48,
+          "z": -0.86
+        },
+        "yaw": 0,
+        "seatHeight": 0.09,
+        "radius": 0.54,
+        "label": "Executive desk chair"
+      },
+      {
+        "id": "personal-workspace-review-v2-lounge-seat",
+        "position": {
+          "x": -3.75,
+          "y": 0.48,
+          "z": 0.25
+        },
+        "yaw": -0.899,
+        "seatHeight": 0.09,
+        "radius": 0.56,
+        "label": "Lounge chair"
+      }
+    ]
+  },
+  "mediaSurfaces": [
+    {
+      "surfaceId": "debug-main",
+      "label": "Owner workspace",
+      "kind": "wall",
+      "widthM": 5.2,
+      "heightM": 2.6,
+      "widthPx": 1920,
+      "heightPx": 960,
+      "transform": {
+        "x": 1.45,
+        "y": 2.62,
+        "z": -6,
+        "yaw": 0
+      },
+      "visible": true
+    }
+  ],
+  "bounds": {
+    "width": 12.6,
+    "height": 4.8,
+    "depth": 12.8
+  },
+  "preview": "preview.webp",
+  "rights": {
+    "owner": "vrata",
+    "license": "internal-original",
+    "clearedFor": [
+      "staging",
+      "production",
+      "web-runtime",
+      "screenshots",
+      "optimization"
+    ],
+    "sourceAssets": [
+      {
+        "id": "personal-workspace-review-v2-procedural-source",
+        "type": "mesh",
+        "author": "Vrata/OpenCode",
+        "licenseRef": "LICENSES.md"
+      }
+    ]
+  },
+  "visual": {
+    "intentionalDark": false,
+    "reviewStage": "architectural-art-direction"
+  },
+  "notes": "Original review candidate with an executive work zone, archive niche, lounge zone, layered stone and walnut architecture, full-height glazing, a procedural exterior, integrated planting, two usable seats, and a contract-aligned owner display. Visual approval is required before promotion."
+}

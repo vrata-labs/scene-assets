@@ -2,18 +2,19 @@
 
 Original, versioned scene bundles for Vrata web and XR rooms.
 
-The production release track contains three contract-complete scene bundles:
+The technical compatibility release track contains three contract-complete scene bundles:
 
 - `personal-workspace-v1/1.0.0`
 - `meeting-room-v1/1.0.0`
 - `presentation-room-v1/1.0.0`
 
-Their GLB and preview files are byte-identical promotions of the accepted
-`0.2.2` art candidates. The final manifests provide product scene identities,
+Their GLB and preview files are byte-identical promotions of the previously
+accepted `0.2.2` technical candidates. The manifests provide product scene identities,
 seat anchors, and contract-checked surface geometry. Runtime-significant
 manifest values remain equal to the candidates after normalizing identity and
 release-facing descriptions. Product catalog activation is managed separately
-by the platform repository.
+by the platform repository. These `1.0.0` releases are not approved as the
+final visual direction and must not be activated as product defaults.
 
 The `0.1.x` paths remain immutable blockout history. `0.2.0` adds an original
 embedded PBR material kit, detailed furniture and fixtures, layered ceilings,
@@ -22,6 +23,11 @@ calibrates those lights for the Three.js runtime's physical intensity units.
 `0.2.2` aligns media geometry with the template surface contracts, clears the
 runtime planes from decorative overlays, and consolidates static furniture for
 mobile/XR mesh headroom.
+
+The replacement art track starts with `meeting-room-review-v2/0.3.0`. It uses
+private SenseTower scenes only as a visual benchmark. No private geometry,
+materials, textures, images, or source files may enter this repository. See
+`docs/visual-direction.md` for the mandatory visual approval gate.
 
 ## Layout
 
@@ -74,6 +80,13 @@ RELEASE_VERSION=1.0.0 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
 
 The Blender source is procedural and uses no external meshes, textures,
 fonts, photographs, or private scene files.
+
+The meeting replacement candidate can be rebuilt and verified independently:
+
+```bash
+RELEASE_VERSION=0.3.0 BUILD_SCENE=meeting-v2 BLENDER_BIN=/path/to/blender pnpm build:scenes
+RELEASE_VERSION=0.3.0 SOURCE_SCENE_IDS=meeting-room-review-v2 BLENDER_BIN=/path/to/blender pnpm verify:source-exports
+```
 
 The official origin is `https://github.com/vrata-labs/scene-assets`. Runtime
 URLs must use a full 40-character commit SHA, for example

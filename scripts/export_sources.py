@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument("--repo-root", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument("--scene-id", action="append", choices=SCENE_IDS + ("meeting-room-review-v2",))
     return parser.parse_args(argv)
 
 
@@ -32,7 +33,7 @@ def main():
 
     repo_root = Path(args.repo_root).resolve()
     output_root = Path(args.output_root).resolve()
-    for scene_id in SCENE_IDS:
+    for scene_id in args.scene_id or SCENE_IDS:
         source_path = repo_root / "sources" / scene_id / "source.blend"
         output_dir = output_root / scene_id
         output_dir.mkdir(parents=True, exist_ok=True)

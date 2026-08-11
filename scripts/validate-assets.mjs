@@ -39,6 +39,16 @@ const optimizedReleaseSurfaceAspects = new Map(finalPromotions.flatMap((promotio
   [`${promotion.sourceSceneId}@${currentArtCandidateVersion}`, promotion.surfaceAspects],
   [`${promotion.finalSceneId}@${finalTemplateVersion}`, promotion.surfaceAspects]
 ]));
+optimizedReleaseSurfaceAspects.set(
+  "meeting-room-review-v2@0.3.0",
+  new Map([["debug-main", 16 / 9], ["whiteboard-wall", 48 / 25]])
+);
+const trackedReviewSources = [
+  {
+    sceneId: "meeting-room-review-v2",
+    sha256: "d150bef942b9f7ee91a5b582008111a151da2b315a49a1db367ad67295e7ca93"
+  }
+];
 const knownOverbrightReleases = new Set([
   "meeting-room-review-v1@0.2.0",
   "personal-workspace-review-v1@0.2.0",
@@ -211,6 +221,11 @@ for (const promotion of finalPromotions) {
     ]);
     assert(sourceFile.equals(finalFile), `final_promotion_asset_mismatch:${promotion.finalSceneId}:${fileName}`);
   }
+}
+for (const source of trackedReviewSources) {
+  const sourceBlend = await readFile(join(repoRoot, "sources", source.sceneId, "source.blend"));
+  const sourceSha256 = createHash("sha256").update(sourceBlend).digest("hex");
+  assert(sourceSha256 === source.sha256, `tracked_source_hash_mismatch:${source.sceneId}`);
 }
 for (let index = 0; index < releaseDirs.length; index += 1) {
   await validateRelease(releaseDirs[index], generatedManifest.releases[index]);

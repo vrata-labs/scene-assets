@@ -164,6 +164,38 @@
       }
     },
     {
+      "sceneId": "meeting-room-review-v2",
+      "version": "0.3.0",
+      "releasePath": "assets/scenes/meeting-room-review-v2/0.3.0",
+      "files": {
+        "scene.json": {
+          "sha256": "e3dc8e06f879173a1923ad91c4f2a122bb0e3c4164338cd5a8c8526dca49735e",
+          "sizeBytes": 3100
+        },
+        "scene.glb": {
+          "sha256": "1e6cef90060f2699fe38444f72cb1586ccec99c2e9a007a61b7bb7885bf859d7",
+          "sizeBytes": 4650144
+        },
+        "preview.webp": {
+          "sha256": "2a1be4421f2eae40b34618787830871ee537e7a308e43535635656f2c97b5cda",
+          "sizeBytes": 93748
+        },
+        "LICENSES.md": {
+          "sha256": "c03024ea32f40b0e0f4fc0203a6808983200a153c8a4c2eb52d9e5c04336ee96",
+          "sizeBytes": 704
+        }
+      },
+      "stats": {
+        "triangles": 49668,
+        "nodes": 67,
+        "meshes": 58,
+        "primitives": 84,
+        "materials": 22,
+        "textures": 22,
+        "animations": 0
+      }
+    },
+    {
       "sceneId": "meeting-room-v1",
       "version": "1.0.0",
       "releasePath": "assets/scenes/meeting-room-v1/1.0.0",
